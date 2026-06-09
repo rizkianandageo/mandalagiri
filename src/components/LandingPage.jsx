@@ -18,13 +18,13 @@ const LandingPage = ({ onApply }) => {
   return (
     <div className="landing-page">
       {/* Background Image & Overlay */}
-      <div className="landing-bg"></div>
+      <div className="landing-bg" style={{ backgroundImage: `url('${import.meta.env.BASE_URL}img/landing_bg.png')` }}></div>
       <div className="landing-overlay"></div>
       
       <div className="landing-content">
         {/* Logo & Title */}
         <div className="landing-brand" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-          <img src="/img/Mandalagiri.png" alt="Mandalagiri Logo" className="landing-logo" />
+          <img src={`${import.meta.env.BASE_URL}img/Mandalagiri.png`} alt="Mandalagiri Logo" className="landing-logo" />
           <h1 style={{ 
             color: '#fff', fontSize: '1.8rem', margin: 0, fontWeight: '800', letterSpacing: '2px', 
             textTransform: 'uppercase', textShadow: '0 0 10px rgba(34, 211, 238, 0.5)'

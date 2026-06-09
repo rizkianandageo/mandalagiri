@@ -96,7 +96,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
           'semeru-terrain': {
             type: 'raster-dem',
             tiles: [
-              window.location.origin + '/data/terrain/{z}/{x}/{y}.png'
+              window.location.origin + import.meta.env.BASE_URL + 'data/terrain/{z}/{x}/{y}.png'
             ],
             tileSize: 256,
             encoding: 'mapbox',
@@ -105,11 +105,11 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
           },
           'jalur': {
             type: 'geojson',
-            data: '/data/jalur.geojson'
+            data: import.meta.env.BASE_URL + 'data/jalur.geojson'
           },
           'poi': {
             type: 'geojson',
-            data: '/data/poi.geojson'
+            data: import.meta.env.BASE_URL + 'data/poi.geojson'
           },
           'hover-source': {
             type: 'geojson',
@@ -275,7 +275,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
           .setLngLat(coordinates)
           .setHTML(`
             <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(34, 211, 238, 0.3); border-radius: 12px; overflow: hidden; width: 220px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); font-family: Inter, sans-serif; backdrop-filter: blur(8px);">
-              <div style="width: 100%; height: 120px; background: #1e293b url('/img/poi/${encodeURIComponent(name)}.jpg') center/cover no-repeat; position: relative;">
+              <div style="width: 100%; height: 120px; background: #1e293b url('${import.meta.env.BASE_URL}img/poi/${encodeURIComponent(name)}.jpg') center/cover no-repeat; position: relative;">
                 <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 60%; background: linear-gradient(to top, rgba(15, 23, 42, 1), transparent);"></div>
               </div>
               <div style="padding: 12px 16px;">
@@ -318,7 +318,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
       // ==========================================
       // FITUR KESULITAN LERENG & FLY-THROUGH
       // ==========================================
-      fetch('/data/profile.json')
+      fetch(`${import.meta.env.BASE_URL}data/profile.json`)
         .then(res => res.json())
         .then(data => {
           setProfileData(data); // Simpan ke state untuk filter POI

@@ -46,10 +46,11 @@ function App() {
 
   useEffect(() => {
     // Muat data rute & POI secara paralel
+    const base = import.meta.env.BASE_URL;
     Promise.all([
-      fetch('/data/profile.json').then(res => res.json()),
-      fetch('/data/poi.geojson').then(res => res.json()),
-      fetch('/data/jalur.geojson').then(res => res.json())
+      fetch(`${base}data/profile.json`).then(res => res.json()),
+      fetch(`${base}data/poi.geojson`).then(res => res.json()),
+      fetch(`${base}data/jalur.geojson`).then(res => res.json())
     ])
       .then(([profileJson, poiGeojson, jalurGeojson]) => {
         setProfileData(profileJson);
@@ -344,7 +345,7 @@ function App() {
             textTransform: 'uppercase', textShadow: '0 0 10px rgba(34, 211, 238, 0.5)',
             display: 'flex', alignItems: 'center'
           }}>
-            <img src="/img/Mandalagiri.png" alt="Mandalagiri Logo" style={{ width: '28px', height: '28px', marginRight: '8px', objectFit: 'contain' }} />
+            <img src={`${import.meta.env.BASE_URL}img/Mandalagiri.png`} alt="Mandalagiri Logo" style={{ width: '28px', height: '28px', marginRight: '8px', objectFit: 'contain' }} />
             Mandalagiri
           </h1>
           <div style={{ display: 'flex', gap: '12px' }}>

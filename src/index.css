@@ -658,70 +658,69 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
- / *   M O B I L E   R E S P O N S I V E   S T Y L E S   * / 
- @ m e d i a   ( m a x - w i d t h :   7 6 8 p x )   { 
-     . h u d - t o p b a r   { 
-         p a d d i n g :   1 0 p x ; 
-         h e i g h t :   a u t o ; 
-         f l e x - w r a p :   w r a p ; 
-         j u s t i f y - c o n t e n t :   s p a c e - b e t w e e n ; 
-         b a c k g r o u n d :   r g b a ( 9 ,   9 ,   1 1 ,   0 . 9 ) ; 
-         z - i n d e x :   5 0 ; 
-     } 
-     . h u d - t o p b a r   h 1   { 
-         f o n t - s i z e :   1 r e m   ! i m p o r t a n t ; 
-     } 
-     . h u d - t o p b a r   s e l e c t   { 
-         p a d d i n g :   6 p x   2 0 p x   6 p x   2 8 p x   ! i m p o r t a n t ; 
-         f o n t - s i z e :   0 . 7 r e m   ! i m p o r t a n t ; 
-     } 
-     
-     . h u d - l e f t - c o n t a i n e r   { 
-         d i s p l a y :   n o n e ;   / *   S e m b u n y i k a n   M o u n t a i n   I n f o   d i   H P   a g a r   t i d a k   p e n u h   * / 
-     } 
-     
-     . h u d - r i g h t - c o n t a i n e r   { 
-         t o p :   7 0 p x ; 
-         r i g h t :   1 0 p x ; 
-         l e f t :   1 0 p x ; 
-         w i d t h :   a u t o ; 
-         z - i n d e x :   4 0 ; 
-         m a x - h e i g h t :   3 5 v h ; 
-         o v e r f l o w - y :   a u t o ; 
-     } 
-     
-     . h u d - b o t t o m   { 
-         b o t t o m :   1 0 p x ; 
-         l e f t :   1 0 p x ; 
-         t r a n s f o r m :   n o n e ; 
-         w i d t h :   c a l c ( 1 0 0 %   -   2 0 p x ) ; 
-         h e i g h t :   a u t o ; 
-         f l e x - d i r e c t i o n :   c o l u m n ; 
-         p a d d i n g :   1 0 p x ; 
-         g a p :   1 0 p x ; 
-         z - i n d e x :   4 0 ; 
-         m a x - h e i g h t :   4 5 v h ; 
-         o v e r f l o w - y :   a u t o ; 
-     } 
-     
-     . h u d - b o t t o m   >   d i v : f i r s t - c h i l d   { 
-         w i d t h :   1 0 0 %   ! i m p o r t a n t ; 
-         m i n - w i d t h :   1 0 0 %   ! i m p o r t a n t ; 
-         b o r d e r - r i g h t :   n o n e   ! i m p o r t a n t ; 
-         p a d d i n g - r i g h t :   0   ! i m p o r t a n t ; 
-         m a r g i n - r i g h t :   0   ! i m p o r t a n t ; 
-         b o r d e r - b o t t o m :   1 p x   s o l i d   r g b a ( 2 5 5 , 2 5 5 , 2 5 5 , 0 . 1 ) ; 
-         p a d d i n g - b o t t o m :   1 0 p x ; 
-         m a r g i n - b o t t o m :   1 0 p x ; 
-     } 
-     
-     . c h a r t - c o n t a i n e r   { 
-         h e i g h t :   1 2 0 p x   ! i m p o r t a n t ; 
-     } 
-     
-     . t e l e m e t r y - v a l u e - l g   { 
-         f o n t - s i z e :   1 . 2 r e m ; 
-     } 
- } 
-  
- 
+/* MOBILE RESPONSIVE STYLES */
+@media (max-width: 768px) {
+  .hud-topbar {
+    padding: 10px;
+    height: auto;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    background: rgba(9, 9, 11, 0.9);
+    z-index: 50;
+  }
+  .hud-topbar h1 {
+    font-size: 1rem !important;
+  }
+  .hud-topbar select {
+    padding: 6px 20px 6px 28px !important;
+    font-size: 0.7rem !important;
+  }
+  
+  .hud-left-container {
+    display: none; /* Sembunyikan Mountain Info di HP agar tidak penuh */
+  }
+  
+  .hud-right-container {
+    top: 70px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+    z-index: 40;
+    max-height: 35vh;
+    overflow-y: auto;
+  }
+  
+  .hud-bottom {
+    bottom: 10px;
+    left: 10px;
+    transform: none;
+    width: calc(100% - 20px);
+    height: auto;
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+    z-index: 40;
+    max-height: 45vh;
+    overflow-y: auto;
+  }
+  
+  .hud-bottom > div:first-child {
+    width: 100% !important;
+    min-width: 100% !important;
+    border-right: none !important;
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .chart-container {
+    height: 120px !important;
+  }
+  
+  .telemetry-value-lg {
+    font-size: 1.2rem;
+  }
+}
+

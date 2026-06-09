@@ -1,0 +1,657 @@
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+:root {
+  --bg-dark: #09090b;
+  --panel-bg: rgba(24, 24, 27, 0.75);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --text-main: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --accent: #22d3ee; /* Cyan/Teal HUD */
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  overflow: hidden;
+  user-select: none;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'Courier New', Consolas, monospace;
+  letter-spacing: 0.05em;
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #10b981, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* HUD Panels */
+.hud-panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.hud-panel-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* Layout Positions */
+.hud-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  z-index: 20;
+  background: linear-gradient(to bottom, rgba(9, 9, 11, 0.9), transparent);
+  pointer-events: none; /* Let clicks pass through except on buttons */
+}
+
+.hud-topbar > * {
+  pointer-events: auto;
+}
+
+.hud-left-container {
+  position: absolute;
+  top: 80px;
+  left: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+  width: 340px;
+}
+
+.hud-right-container {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+  width: 320px;
+}
+
+.hud-bottom {
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48px);
+  max-width: 1400px;
+  height: 240px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 40px;
+}
+
+/* Weather Grid */
+.weather-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.weather-box {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+.weather-box span:first-child {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.weather-box span:last-child {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* Telemetry Stats */
+.telemetry-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+.telemetry-row:last-child {
+  margin-bottom: 0;
+}
+
+.telemetry-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.telemetry-value-lg {
+  font-size: 2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.telemetry-unit {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.grade-bar {
+  width: 6px;
+  height: 24px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  margin-right: 12px;
+}
+.grade-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--accent);
+  transition: height 0.3s;
+}
+
+/* Play Controls */
+.sim-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.sim-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.sim-btn:hover {
+  color: var(--accent);
+}
+.sim-play-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #000;
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
+}
+.sim-play-btn:hover {
+  transform: scale(1.05);
+  background: #67e8f9;
+  color: #000;
+}
+.sim-play-btn.active {
+  background: #ef4444;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+.sim-play-btn.active:hover {
+  background: #f87171;
+}
+
+/* POI Marker */
+.poi-marker {
+  width: 10px;
+  height: 10px;
+  background-color: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent);
+  cursor: pointer;
+}
+
+.mapboxgl-popup-content {
+  background: var(--panel-bg) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--panel-border);
+  color: white;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.mapboxgl-popup-tip {
+  border-top-color: var(--panel-bg) !important;
+  border-bottom-color: var(--panel-bg) !important;
+}
+
+/* Hiker Marker */
+.hiker-marker {
+  width: 32px;
+  height: 32px;
+  background: var(--bg-dark);
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.6);
+}
+
+.chart-container {
+  flex: 1;
+  height: 100%;
+  max-width: 100%;
+  min-width: 200px;
+  margin: 0;
+}
+
+/* HUD Sci-Fi Ornaments */
+.sci-fi-ornament {
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  border: 1px dashed rgba(34, 211, 238, 0.6);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: spinSlow 12s linear infinite;
+}
+
+.sci-fi-ornament-2 {
+  position: absolute;
+  width: 92px;
+  height: 92px;
+  border: 1px solid rgba(34, 211, 238, 0.1);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+@keyframes spinSlow {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ----------------------------------
+   USER LOCATION MARKER (BLUE DOT)
+----------------------------------- */
+.user-location-marker {
+  position: relative;
+}
+.user-location-marker::after {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  right: -12px;
+  bottom: -12px;
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 50%;
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  z-index: -1;
+  pointer-events: none;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* Custom MapLibre Popup */
+.maplibregl-popup-content {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+.maplibregl-popup-tip {
+  display: none !important;
+}
+.maplibregl-popup-close-button {
+  display: none !important;
+}
+
+/* Custom positioning for MapLibre Controls */
+.maplibregl-ctrl-bottom-right {
+  bottom: 10px !important;
+  right: 10px !important;
+  z-index: 5;
+}
+.maplibregl-ctrl-bottom-left {
+  /* Di atas card profile (24px + 240px + 16px gap = 280px) */
+  bottom: 280px !important;
+  /* Rata kiri dengan card profile: max(24px padding, 50vw - 700px max-width) */
+  left: max(24px, calc(50vw - 700px)) !important;
+  z-index: 5;
+}
+
+/* Restyle MapLibre controls for dark mode to match HUD */
+.maplibregl-ctrl-group {
+  background-color: var(--panel-bg) !important;
+  border: 1px solid var(--panel-border) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+.maplibregl-ctrl-group button {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  width: 32px !important;
+  height: 32px !important;
+  transition: all 0.2s ease;
+}
+.maplibregl-ctrl-group button:last-child {
+  border-bottom: none !important;
+}
+.maplibregl-ctrl-group button:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+.maplibregl-ctrl-icon {
+  filter: invert(1) brightness(0.8) sepia(1) hue-rotate(140deg) saturate(3) !important;
+}
+.maplibregl-ctrl-compass-empty {
+  background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M9 20l1-7 1 7z" fill="%23ef4444"/%3E%3Cpath d="M9 0l1 7 1-7z" fill="%23f4f4f5"/%3E%3C/svg%3E') !important;
+  filter: none !important;
+}
+.maplibregl-ctrl-scale {
+  background-color: var(--panel-bg) !important;
+  border: 1px solid rgba(34, 211, 238, 0.3) !important;
+  border-top: none !important;
+  color: var(--accent) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 4px 8px !important;
+  border-radius: 0 0 4px 4px !important;
+}
+
+/* =========================================
+   LANDING PAGE STYLES
+   ========================================= */
+.landing-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  color: #fff;
+}
+
+.landing-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('/img/landing_bg.png') center/cover no-repeat;
+  z-index: 1;
+  transform: scale(1.05); /* Slight zoom for subtle animation if desired */
+  animation: slowZoom 20s infinite alternate linear;
+}
+
+@keyframes slowZoom {
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.05) translate(10px, 10px); }
+}
+
+.landing-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.8) 70%, rgba(15, 23, 42, 1) 100%);
+  z-index: 2;
+}
+
+.landing-content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.landing-brand {
+  margin-bottom: 24px;
+  animation: fadeInDown 1s ease-out;
+}
+
+.landing-logo {
+  max-width: 150px;
+  height: auto;
+  filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.4));
+}
+
+.landing-desc {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin-bottom: 40px;
+  animation: fadeIn 1.2s ease-out 0.3s backwards;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.landing-glass-panel {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 32px;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+  animation: fadeInUp 1s ease-out 0.6s backwards;
+}
+
+.landing-panel-header {
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.landing-title {
+  margin: 0;
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.landing-title-line {
+  height: 2px;
+  width: 60px;
+  background: var(--accent);
+  margin: 12px auto 0;
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.landing-input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.landing-input-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.landing-select-wrapper {
+  width: 100%;
+  position: relative;
+}
+
+.landing-select {
+  width: 100%;
+  appearance: none;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.landing-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+}
+
+.landing-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.landing-select option {
+  background: #0f172a;
+  color: #fff;
+  padding: 10px;
+}
+
+.landing-btn {
+  width: 100%;
+  margin-top: 12px;
+  background: linear-gradient(135deg, #0ea5e9, #22d3ee);
+  color: #fff;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
+}
+
+.landing-btn:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 25px rgba(14, 165, 233, 0.4);
+}
+
+.landing-btn:active:not(.disabled) {
+  transform: translateY(0);
+}
+
+.landing-btn.disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.landing-footer {
+  margin-top: 40px;
+  font-size: 0.75rem;
+  color: #64748b;
+  animation: fadeIn 1s ease-out 1s backwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}

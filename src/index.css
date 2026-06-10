@@ -658,8 +658,10 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+
 /* MOBILE RESPONSIVE STYLES */
 @media (max-width: 768px) {
+  /* TOP BAR */
   .hud-topbar {
     padding: 10px;
     height: auto;
@@ -672,24 +674,108 @@ body {
     font-size: 1rem !important;
   }
   .hud-topbar select {
-    padding: 6px 20px 6px 28px !important;
-    font-size: 0.7rem !important;
+    padding: 4px 8px 4px 16px !important;
+    font-size: 0.45rem !important;
+  }
+  .topbar-icon {
+    width: 10px !important;
+    height: 10px !important;
+    left: 4px !important;
+  }
+  
+  /* MINIMIZED CARDS */
+  .hud-panel-title {
+    font-size: 0.55rem !important;
+    gap: 4px !important;
+    margin-bottom: 8px !important;
   }
   
   .hud-left-container {
-    display: none; /* Sembunyikan Mountain Info di HP agar tidak penuh */
+    display: flex !important;
+    top: 60px;
+    left: 10px;
+    width: 35%;
+    z-index: 40;
   }
   
   .hud-right-container {
-    top: 70px;
+    top: 60px;
     right: 10px;
-    left: 10px;
-    width: auto;
+    left: auto;
+    width: 35%;
     z-index: 40;
     max-height: 35vh;
     overflow-y: auto;
   }
   
+  .hud-panel {
+    padding: 10px !important;
+  }
+  
+  .mountain-info-content {
+    font-size: 0.55rem !important;
+    line-height: 1.4 !important;
+  }
+  .mountain-info-title {
+    font-size: 0.75rem !important;
+    margin-bottom: 4px !important;
+  }
+  .mountain-info-content .text-muted {
+    font-size: 0.55rem !important;
+  }
+  .mountain-info-content > div {
+    gap: 2px 4px !important;
+  }
+  
+  .live-situation-content .telemetry-label {
+    font-size: 0.55rem !important;
+    margin-bottom: 2px !important;
+  }
+  .live-situation-content .telemetry-value-lg {
+    font-size: 0.8rem !important;
+  }
+  .live-situation-content .font-mono.text-muted {
+    font-size: 0.55rem !important;
+  }
+  .live-situation-content button {
+    font-size: 0.55rem !important;
+    padding: 2px 6px !important;
+  }
+  .live-situation-content .telemetry-row {
+    margin-bottom: 4px !important;
+  }
+  .live-situation-content .telemetry-unit {
+    font-size: 0.55rem !important;
+  }
+  .live-sit-coords-box { font-size: 0.65rem !important; }
+  .live-sit-outside { font-size: 0.65rem !important; }
+  .live-sit-coords { font-size: 0.65rem !important; }
+  .live-sit-grade-val { font-size: 0.85rem !important; }
+  .live-sit-weather-lbl { font-size: 0.55rem !important; }
+  .live-sit-weather-val { font-size: 0.9rem !important; }
+  .live-sit-weather-desc { font-size: 0.55rem !important; }
+  
+  .weather-grid {
+    gap: 1px !important;
+  }
+  .weather-box {
+    padding: 2px 1px !important;
+  }
+  .weather-box span:first-child {
+    font-size: 0.35rem !important;
+    letter-spacing: 0px !important;
+  }
+  .weather-box svg {
+    width: 10px !important;
+    height: 10px !important;
+    margin: 2px 0 !important;
+  }
+  .weather-box span:last-child {
+    font-size: 0.45rem !important;
+    margin-top: 2px !important;
+  }
+  
+  /* BOTTOM HUD */
   .hud-bottom {
     bottom: 10px;
     left: 10px;
@@ -705,8 +791,6 @@ body {
   }
   
   .hud-bottom > div:first-child {
-    width: 100% !important;
-    min-width: 100% !important;
     border-right: none !important;
     padding-right: 0 !important;
     margin-right: 0 !important;
@@ -715,12 +799,148 @@ body {
     margin-bottom: 10px;
   }
   
+  .segment-profile-col { min-width: 100% !important; border-right: none; }
+  .elevation-profile-col { margin: 0 !important; min-width: 100% !important; }
+  
+  .route-select-row {
+    flex-direction: column !important;
+    gap: 6px !important;
+    width: 100%;
+  }
+  .route-select-row > div {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+  .route-select-row .telemetry-label {
+    font-size: 0.55rem !important;
+  }
+  
   .chart-container {
     height: 120px !important;
+    width: 100% !important;
   }
   
   .telemetry-value-lg {
-    font-size: 1.2rem;
+    font-size: 1rem !important;
+  }
+  
+  /* SEGMENT STATS HORIZONTAL */
+  .segment-stats-container {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin-bottom: 8px !important;
+  }
+  .segment-stat-item {
+    margin-bottom: 0 !important;
+    align-items: center;
+    flex-direction: column !important;
+  }
+  .segment-stat-item .telemetry-label {
+    font-size: 0.45rem !important;
+    margin-bottom: 2px !important;
+  }
+  .stat-val-dist { font-size: 0.65rem !important; margin-bottom: 0 !important; }
+  .stat-val-time { font-size: 0.65rem !important; margin-bottom: 0 !important; }
+  .trail-char-box { padding: 2px 4px !important; margin-top: 0 !important; border-width: 1px !important; }
+  .trail-char-main { font-size: 0.5rem !important; }
+  .trail-char-sub { display: none !important; }
+  
+  /* SIMULATION BUTTON PIPIH */
+  .simulation-ornament-container {
+    width: 100% !important;
+    height: auto !important;
+  }
+  .sci-fi-ornament, .sci-fi-ornament-2 {
+    display: none !important;
+  }
+  .sim-play-btn {
+    border-radius: 4px !important;
+    width: 30% !important;
+    height: 24px !important;
+    box-shadow: none !important;
+  }
+  .sim-play-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  .simulation-controls-col {
+    min-width: 100% !important;
+    margin-top: -10px !important;
+  }
+  
+  /* MAP CONTROLS */
+  .maplibregl-ctrl-zoom-in,
+  .maplibregl-ctrl-zoom-out {
+    display: none !important;
+  }
+  .maplibregl-ctrl-bottom-right {
+    bottom: 365px !important;
+    right: 10px !important;
+    z-index: 50 !important;
+  }
+  .maplibregl-ctrl-bottom-left {
+    bottom: 365px !important;
+    left: 10px !important;
+    z-index: 50 !important;
+  }
+  .maplibregl-ctrl-attrib {
+    position: fixed !important;
+    bottom: 5px !important;
+    right: 5px !important;
+    z-index: 60 !important;
   }
 }
 
+
+/* LANDING PAGE MOBILE */
+@media (max-width: 768px) {
+  .landing-page {
+    height: 100dvh !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+  .landing-bg {
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+  }
+  .landing-content {
+    padding: 0 16px !important;
+  }
+  .landing-logo {
+    max-width: 110px !important;
+  }
+  .landing-desc {
+    font-size: 0.9rem !important;
+    margin-bottom: 24px !important;
+  }
+  .landing-glass-panel {
+    padding: 20px !important;
+    border-radius: 16px !important;
+  }
+  .landing-title {
+    font-size: 1.1rem !important;
+  }
+  .landing-input-group label {
+    font-size: 0.8rem !important;
+  }
+  .landing-select {
+    padding: 12px 14px !important;
+    font-size: 0.9rem !important;
+  }
+  .landing-btn {
+    padding: 14px !important;
+    font-size: 1rem !important;
+  }
+  .landing-footer {
+    margin-top: 24px !important;
+    font-size: 0.65rem !important;
+  }
+}

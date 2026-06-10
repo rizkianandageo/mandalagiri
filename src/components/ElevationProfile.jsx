@@ -109,7 +109,7 @@ const ElevationProfile = ({ data = [], currentDistance }) => {
       {chartWidth > 0 && (
         <AreaChart
           width={chartWidth}
-          height={CHART_HEIGHT}
+          height={window.innerWidth <= 768 ? 120 : CHART_HEIGHT}
           data={data}
           margin={MARGIN}
         >

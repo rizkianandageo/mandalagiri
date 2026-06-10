@@ -162,8 +162,8 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
           exaggeration: 1.1
         }
       },
-      center: [112.9356, -8.0583],
-      zoom: 12.26,
+      center: window.innerWidth <= 768 ? [112.9625, -8.0303] : [112.9356, -8.0583],
+      zoom: window.innerWidth <= 768 ? 11.92 : 12.26,
       pitch: 60.51,
       bearing: -129.54,
       minPitch: 0,

@@ -19,8 +19,10 @@ function App() {
   const [selectedMountain, setSelectedMountain] = useState('');
   const [selectedRoute, setSelectedRoute] = useState('');
   
-  const [isDescMinimized, setIsDescMinimized] = useState(false);
-  const [isWeatherMinimized, setIsWeatherMinimized] = useState(false);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [isDescMinimized, setIsDescMinimized] = useState(isMobile);
+  const [isWeatherMinimized, setIsWeatherMinimized] = useState(isMobile);
+  const [isLiveSituationMinimized, setIsLiveSituationMinimized] = useState(isMobile);
   
   const [segmentStats, setSegmentStats] = useState({
     jarakTempuh: "0.0",
@@ -351,7 +353,7 @@ function App() {
           <div style={{ display: 'flex', gap: '12px' }}>
             {/* Switch Mountain Dropdown */}
             <div style={{ position: 'relative', display: 'inline-block' }}>
-              <Mountain size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#000', zIndex: 2 }} />
+              <Mountain size={14} className="topbar-icon" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#000', zIndex: 2 }} />
               <select 
                 value={selectedMountain}
                 onChange={e => setSelectedMountain(e.target.value)}
@@ -373,7 +375,7 @@ function App() {
             
             {/* Switch Route Dropdown */}
             <div style={{ position: 'relative', display: 'inline-block' }}>
-              <Map size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#000', zIndex: 2 }} />
+              <Map size={14} className="topbar-icon" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#000', zIndex: 2 }} />
               <select 
                 value={selectedRoute}
                 onChange={e => setSelectedRoute(e.target.value)}
@@ -413,8 +415,8 @@ function App() {
             </div>
             
             {!isDescMinimized && (
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: '1.6' }}>
-                <h3 className="text-gradient-primary" style={{ fontSize: '1.1rem', marginBottom: '8px', fontWeight: 'bold', margin: '0 0 8px 0' }}>Mt. Semeru</h3>
+              <div className="mountain-info-content" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: '1.6' }}>
+                <h3 className="text-gradient-primary mountain-info-title" style={{ fontSize: '1.1rem', marginBottom: '8px', fontWeight: 'bold', margin: '0 0 8px 0' }}>Mt. Semeru</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr', gap: '4px 8px', alignItems: 'start' }}>
                   <div className="text-muted font-mono">Location</div><div className="text-muted font-mono">:</div><div>East Java, Indonesia</div>
                   <div className="text-muted font-mono">Elevation</div><div className="text-muted font-mono">:</div><div>3,676 meters (12,060 ft)</div>
@@ -433,9 +435,20 @@ function App() {
         
         {/* Card 1: Live Situation */}
         <div className="hud-panel" style={{ position: 'static', width: '100%', padding: '16px' }}>
-          <div className="hud-panel-title">
-            <Activity size={14} /> Live Situation
+          <div className="hud-panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isLiveSituationMinimized ? '0' : '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Activity size={14} /> Live Situation
+            </div>
+            <button 
+              onClick={() => setIsLiveSituationMinimized(!isLiveSituationMinimized)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            >
+              {isLiveSituationMinimized ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            </button>
           </div>
+          
+          {!isLiveSituationMinimized && (
+            <div className="live-situation-content">
           
           <div className="telemetry-row">
             <span className="telemetry-label">Elevation</span>
@@ -472,11 +485,11 @@ function App() {
               <Target size={12} /> Fly to GPS
             </button>
           </div>
-          <div className="font-mono text-main" style={{ fontSize: '0.9rem', fontWeight: 600, marginTop: '8px' }}>
+          <div className="font-mono text-main live-sit-coords-box" style={{ fontSize: '0.9rem', fontWeight: 600, marginTop: '8px' }}>
             {isOutsideBounds ? (
-              <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>Outside mountain area.</span>
+              <span className="live-sit-outside" style={{ color: '#ef4444', fontSize: '0.8rem' }}>Outside mountain area.</span>
             ) : (
-              `${Math.abs(userLocation.lat).toFixed(4)}° S, ${userLocation.lng.toFixed(4)}° E`
+              <span className="live-sit-coords">{`${Math.abs(userLocation.lat).toFixed(4)}° S, ${userLocation.lng.toFixed(4)}° E`}</span>
             )}
           </div>
         </div>
@@ -488,22 +501,24 @@ function App() {
               <div className="grade-bar">
                 <div className="grade-fill" style={{ height: `${Math.min(100, Math.abs(liveTelemetry?.slope || 0))}%` }}></div>
               </div>
-              <span className="telemetry-value font-mono" style={{ marginLeft: '8px', fontSize: '1.2rem', fontWeight: 'bold', color: activeTelemetry?.slope > 15 ? '#ef4444' : 'var(--text-primary)' }}>{activeTelemetry?.slope?.toFixed(1) || '0.0'} <span className="telemetry-unit">%</span></span>
+              <span className="telemetry-value font-mono live-sit-grade-val" style={{ marginLeft: '8px', fontSize: '1.2rem', fontWeight: 'bold', color: activeTelemetry?.slope > 15 ? '#ef4444' : 'var(--text-primary)' }}>{activeTelemetry?.slope?.toFixed(1) || '0.0'} <span className="telemetry-unit">%</span></span>
             </div>
           </div>
           
             <div className="telemetry-row" style={{ flex: 1 }}>
-              <span className="telemetry-label">Weather (Current)</span>
-              <span className="telemetry-value-lg font-mono" style={{ fontSize: '1.4rem' }}>
+              <span className="telemetry-label live-sit-weather-lbl">Weather (Current)</span>
+              <span className="telemetry-value-lg font-mono live-sit-weather-val" style={{ fontSize: '1.4rem' }}>
                 {weather ? weather.temperature : '...'}<span className="telemetry-unit">°C</span>
               </span>
               {weather && (
-                <div className="font-mono text-muted" style={{ fontSize: '0.65rem', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div className="font-mono text-muted live-sit-weather-desc" style={{ fontSize: '0.65rem', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Wind size={12} /> {weather.windspeed}KM/H
                 </div>
               )}
             </div>
           </div>
+          </div>
+          )}
         </div>
 
         {/* Card 2: Weather Forecast */}
@@ -542,41 +557,49 @@ function App() {
       <div className="hud-panel hud-bottom">
         
         {/* Kiri: Sisa Jarak & ETA */}
-        <div style={{ display: 'flex', flexDirection: 'column', minWidth: '220px' }}>
+        <div className="segment-profile-col" style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="hud-panel-title" style={{ marginBottom: '8px' }}>
             <Activity size={14} /> Segment Profile
           </div>
           
-          <span className="telemetry-label">Distance</span>
-          <span className="font-mono text-accent" style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px' }}>
-            {dynJarakTempuh} <span className="telemetry-unit text-accent">KM</span>
-          </span>
-          
-          <span className="telemetry-label">Estimated Time</span>
-          <span className="font-mono" style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>
-            {dynWaktuStr}
-          </span>
+          <div className="segment-stats-container">
+            <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
+              <span className="telemetry-label">Distance</span>
+              <span className="font-mono text-accent stat-val-dist" style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px' }}>
+                {dynJarakTempuh} <span className="telemetry-unit text-accent">KM</span>
+              </span>
+            </div>
+            
+            <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
+              <span className="telemetry-label">Estimated Time</span>
+              <span className="font-mono stat-val-time" style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>
+                {dynWaktuStr}
+              </span>
+            </div>
 
-          <span className="telemetry-label">Trail Characteristics</span>
-          <div className="font-mono" style={{ 
-            color: segmentStats.difficultyColor,
-            padding: '4px 8px',
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '4px',
-            border: `1px solid ${segmentStats.difficultyColor}`,
-            marginTop: '2px',
-            display: 'inline-flex',
-            flexDirection: 'column',
-            width: 'max-content'
-          }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{segmentStats.diffMain}</span>
-            {segmentStats.diffSub && <span style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '2px' }}>{segmentStats.diffSub}</span>}
+            <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
+              <span className="telemetry-label">Route</span>
+              <div className="font-mono trail-char-box" style={{ 
+                color: segmentStats.difficultyColor,
+                padding: '4px 8px',
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: '4px',
+                border: `1px solid ${segmentStats.difficultyColor}`,
+                marginTop: '2px',
+                display: 'inline-flex',
+                flexDirection: 'column',
+                width: 'max-content'
+              }}>
+                <span className="trail-char-main" style={{ fontSize: '0.85rem', fontWeight: 700 }}>{segmentStats.diffMain}</span>
+                {segmentStats.diffSub && <span className="trail-char-sub" style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '2px' }}>{segmentStats.diffSub}</span>}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Tengah: Grafik Elevasi & Dropdown POI */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', margin: '0 40px', minWidth: '400px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '12px' }}>
+        <div className="elevation-profile-col" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div className="route-select-row" style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="telemetry-label" style={{ margin: 0 }}>Start:</span>
               <select 
@@ -620,9 +643,9 @@ function App() {
         </div>
 
         {/* Kanan: Kontrol Simulasi */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: '120px', position: 'relative' }}>
+        <div className="simulation-controls-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: '120px', position: 'relative' }}>
           
-          <div style={{ position: 'relative', width: '96px', height: '96px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="simulation-ornament-container" style={{ position: 'relative', width: '96px', height: '96px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {/* Ornamen HUD */}
             <div className="sci-fi-ornament" style={{ borderColor: isSimulating ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 211, 238, 0.4)' }}></div>
             <div className="sci-fi-ornament-2" style={{ 
@@ -652,6 +675,7 @@ function App() {
 
             {/* Main Button */}
             <button 
+              className="sim-play-btn"
               onClick={toggleSimulation}
               style={{
                 width: '56px',

@@ -164,9 +164,27 @@ function App() {
             return null;
           }).filter(f => f !== null);
           setForecast(dailyForecasts);
+          
+          // Simpan ke LocalStorage untuk fallback saat offline
+          localStorage.setItem('mandalagiri_weather_cache', JSON.stringify({
+            current: data.current_weather,
+            forecast: dailyForecasts
+          }));
         }
       })
-      .catch(err => console.error("Gagal load cuaca:", err));
+      .catch(err => {
+        console.error("Gagal load cuaca, mencoba dari cache lokal:", err);
+        const cachedStr = localStorage.getItem('mandalagiri_weather_cache');
+        if (cachedStr) {
+          try {
+            const cached = JSON.parse(cachedStr);
+            if (cached.current) setWeather(cached.current);
+            if (cached.forecast) setForecast(cached.forecast);
+          } catch (e) {
+            console.error("Gagal membaca cache cuaca:", e);
+          }
+        }
+      });
 
     // Listener untuk Live Telemetry dan Hover dari MapComponent
     const handleSimulationTick = (e) => {

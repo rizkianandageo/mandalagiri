@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import MapComponent from './components/MapComponent';
 import ElevationProfile from './components/ElevationProfile';
 import LandingPage from './components/LandingPage';
-import { Mountain, Map, Target, CloudRain, Sun, Wind, Cloud, Play, Square, Rewind, FastForward, Activity, ChevronUp, ChevronDown } from 'lucide-react';
+import { Mountain, Map, MapPin, Target, CloudRain, Sun, Wind, Cloud, Play, Square, Rewind, FastForward, Activity, ChevronUp, ChevronDown } from 'lucide-react';
 import './index.css';
 
 function App() {
@@ -24,6 +24,8 @@ function App() {
   const [isWeatherMinimized, setIsWeatherMinimized] = useState(isMobile);
   const [isLiveSituationMinimized, setIsLiveSituationMinimized] = useState(isMobile);
   const [isProfileMinimized, setIsProfileMinimized] = useState(false);
+  const [showTrailLayer, setShowTrailLayer] = useState(true);
+  const [showPoiLayer, setShowPoiLayer] = useState(true);
 
   useEffect(() => {
     if (isProfileMinimized) {
@@ -364,6 +366,8 @@ function App() {
           endPoi={endPoi} 
           slicedProfileData={slicedProfileData}
           poiList={poiList}
+          showTrailLayer={showTrailLayer}
+          showPoiLayer={showPoiLayer}
         />
       
       {/* HUD: Top Bar */}
@@ -577,6 +581,26 @@ function App() {
               <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Loading weather data...</div>
             )
           )}
+        </div>
+      </div>
+
+      {/* Layer Legend / Switcher */}
+      <div className={`layer-legend-panel ${isProfileMinimized ? 'minimized' : ''}`}>
+        <div 
+          className="legend-item"
+          onClick={() => setShowTrailLayer(!showTrailLayer)}
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', opacity: showTrailLayer ? 1 : 0.5, transition: 'opacity 0.2s' }}
+        >
+          <div style={{ width: '20px', height: '4px', background: 'linear-gradient(90deg, #10b981, #f59e0b, #ef4444)', borderRadius: '2px', boxShadow: '0 0 6px rgba(245, 158, 11, 0.4)' }}></div>
+          <span>Jalur Pendakian</span>
+        </div>
+        <div 
+          className="legend-item"
+          onClick={() => setShowPoiLayer(!showPoiLayer)}
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', opacity: showPoiLayer ? 1 : 0.5, transition: 'opacity 0.2s' }}
+        >
+          <MapPin size={16} color="#3b82f6" fill="#1e3a8a" />
+          <span>Point of Interest</span>
         </div>
       </div>
 

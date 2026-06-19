@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 
-const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList }) => {
+const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList, showTrailLayer = true, showPoiLayer = true }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const activePopupRef = useRef(null);
@@ -13,6 +13,25 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
   useEffect(() => {
     poiListRef.current = poiList;
   }, [poiList]);
+
+  // Efek untuk menyembunyikan/menampilkan layer jalur
+  useEffect(() => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+    const trailLayers = ['jalur-slope-line', 'jalur-slope-glow'];
+    trailLayers.forEach(layer => {
+      if (map.current.getLayer(layer)) {
+        map.current.setLayoutProperty(layer, 'visibility', showTrailLayer ? 'visible' : 'none');
+      }
+    });
+  }, [showTrailLayer]);
+
+  // Efek untuk menyembunyikan/menampilkan layer POI
+  useEffect(() => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (map.current.getLayer('poi-layer')) {
+      map.current.setLayoutProperty('poi-layer', 'visibility', showPoiLayer ? 'visible' : 'none');
+    }
+  }, [showPoiLayer]);
 
   // useEffect TERPISAH khusus untuk event listener profile hover
   useEffect(() => {

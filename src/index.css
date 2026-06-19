@@ -969,3 +969,45 @@ body {
     font-size: 0.65rem !important;
   }
 }
+
+/* Layer Legend Panel */
+.layer-legend-panel {
+  position: absolute;
+  z-index: 15;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  transition: bottom 0.3s ease-in-out;
+  color: var(--text-color);
+  font-size: 0.8rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  flex-direction: column;
+  gap: 12px;
+  left: 10px;
+  bottom: 430px; /* Di atas scale bar mobile yang 385px */
+}
+
+.layer-legend-panel.minimized {
+  bottom: 135px; /* Di atas scale bar mobile minimized yang 90px */
+}
+
+.layer-legend-panel .legend-item:hover {
+  filter: brightness(1.2);
+}
+
+@media (min-width: 769px) {
+  .layer-legend-panel {
+    flex-direction: row;
+    gap: 20px;
+    bottom: 280px !important; /* Sejajar dgn scale bar desktop (280px) */
+    right: max(24px, calc(50vw - 700px)); /* Rata kanan card */
+    left: auto;
+  }
+  .layer-legend-panel.minimized {
+    bottom: 80px !important;
+  }
+}

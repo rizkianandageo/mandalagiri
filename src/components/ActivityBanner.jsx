@@ -161,7 +161,10 @@ const ActivityBanner = ({ routeData, onClose }) => {
                     <AreaChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
                       <XAxis dataKey="time" hide />
                       <YAxis domain={['auto', 'auto']} hide />
-                      <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                      <Tooltip 
+                        formatter={(value) => [`${Number(value).toFixed(2)} m`, 'Elevation']}
+                        contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} 
+                      />
                       <Area type="monotone" dataKey="elevation" stroke="#84cc16" fill="#84cc16" fillOpacity={0.5} />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -174,7 +177,10 @@ const ActivityBanner = ({ routeData, onClose }) => {
                     <AreaChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
                       <XAxis dataKey="time" hide />
                       <YAxis hide />
-                      <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                      <Tooltip 
+                        formatter={(value) => [`${Number(value).toFixed(2)} kph`, 'Speed']}
+                        contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} 
+                      />
                       <Area type="monotone" dataKey="speed" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.5} />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -187,7 +193,10 @@ const ActivityBanner = ({ routeData, onClose }) => {
                     <AreaChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
                       <XAxis dataKey="time" hide />
                       <YAxis domain={['auto', 'auto']} hide />
-                      <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                      <Tooltip 
+                        formatter={(value) => [`${Number(value).toFixed(2)} bpm`, 'Heart Rate']}
+                        contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} 
+                      />
                       <Area type="monotone" dataKey="heartRate" stroke="#ef4444" fill="#ef4444" fillOpacity={0.5} />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -200,7 +209,10 @@ const ActivityBanner = ({ routeData, onClose }) => {
                     <AreaChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
                       <XAxis dataKey="time" hide />
                       <YAxis hide />
-                      <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                      <Tooltip 
+                        formatter={(value) => [`${Number(value).toFixed(2)} spm`, 'Cadence']}
+                        contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} 
+                      />
                       <Area type="monotone" dataKey="cadence" stroke="#f97316" fill="#f97316" fillOpacity={0.5} />
                     </AreaChart>
                   </ResponsiveContainer>

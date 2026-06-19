@@ -40,8 +40,11 @@ const ActivityBanner = ({ routeData, onClose }) => {
               <h3 className="column-title">Distance</h3>
               <StatBlock label="Distance" value={stats.distance} unit="km" />
               
-              <h3 className="column-title" style={{ marginTop: '24px' }}>Calories</h3>
+              <h3 className="column-title" style={{ marginTop: '24px' }}>Calories & Hydration</h3>
+              <StatBlock label="Resting Calories" value={stats.restingCalories || '--'} unit="" />
+              <StatBlock label="Active Calories" value={stats.activeCalories || '--'} unit="" />
               <StatBlock label="Total Calories Burned" value={stats.calories || '--'} unit="" />
+              <StatBlock label="Est. Sweat Loss" value={stats.estSweatLoss || '--'} unit="ml" />
             </div>
 
             {/* Heart Rate Column */}
@@ -51,8 +54,9 @@ const ActivityBanner = ({ routeData, onClose }) => {
               <StatBlock label="Max HR" value={stats.maxHeartRate || '--'} unit="bpm" />
               
               <h3 className="column-title" style={{ marginTop: '24px' }}>Timing</h3>
-              <StatBlock label="Time" value={stats.elapsedTimeStr} unit="" />
+              <StatBlock label="Time" value={stats.timerTimeStr || stats.elapsedTimeStr} unit="" />
               <StatBlock label="Moving Time" value={stats.movingTimeStr} unit="" />
+              <StatBlock label="Elapsed Time" value={stats.elapsedTimeStr} unit="" />
             </div>
 
             {/* Elevation Column */}
@@ -73,6 +77,8 @@ const ActivityBanner = ({ routeData, onClose }) => {
               
               <h3 className="column-title" style={{ marginTop: '24px' }}>Pace/Speed</h3>
               <StatBlock label="Avg Pace" value={stats.avgPace} unit="" />
+              <StatBlock label="Avg Moving Pace" value={stats.avgMovingPace} unit="" />
+              <StatBlock label="Best Pace" value={stats.bestPace} unit="" />
               <StatBlock label="Avg Speed" value={stats.avgSpeed || '--'} unit="kph" />
               <StatBlock label="Max Speed" value={stats.maxSpeed || '--'} unit="kph" />
             </div>

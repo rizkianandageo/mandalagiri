@@ -48,10 +48,10 @@ export const parseActivityFile = async (file) => {
                   chartData.push({
                     time: timeStr,
                     distance: record.distance || 0, // usually km or m depending on parser options
-                    elevation: record.enhanced_altitude ?? record.altitude ?? null,
+                    elevation: (record.enhanced_altitude ?? record.altitude) != null ? (record.enhanced_altitude ?? record.altitude) * 1000 : null,
                     heartRate: record.heart_rate ?? null,
                     speed: record.enhanced_speed ?? record.speed ?? null,
-                    cadence: record.cadence ?? null
+                    cadence: record.cadence ? record.cadence * 2 : null
                   });
                 }
               });
@@ -60,10 +60,24 @@ export const parseActivityFile = async (file) => {
             const sessions = data.sessions || [];
             const session = sessions[0] || {};
             
-            // Calculate detailed stats
+            // Hitung Moving Time sendiri (threshold speed ~1.0 km/h)
+            let calcMovingTimeSec = 0;
+            if (data.records && data.records.length > 1) {
+              for (let i = 1; i < data.records.length; i++) {
+                const prev = data.records[i - 1];
+                const curr = data.records[i];
+                const speed = curr.enhanced_speed ?? curr.speed ?? 0;
+                if (speed > 1.0) {
+                  const deltaSec = (new Date(curr.timestamp).getTime() - new Date(prev.timestamp).getTime()) / 1000;
+                  if (deltaSec > 0 && deltaSec < 120) calcMovingTimeSec += deltaSec;
+                }
+              }
+            }
+
             const distanceNum = session.total_distance || 0;
             const durationSec = session.total_elapsed_time || 0;
-            const movingTimeSec = session.total_timer_time || session.total_elapsed_time || 0;
+            const movingTimeSec = calcMovingTimeSec > 0 ? calcMovingTimeSec : (session.total_timer_time || session.total_elapsed_time || 0);
+            
             const hMoving = Math.floor(movingTimeSec / 3600);
             const mMoving = Math.floor((movingTimeSec % 3600) / 60);
             const sMoving = Math.floor(movingTimeSec % 60);
@@ -74,18 +88,36 @@ export const parseActivityFile = async (file) => {
             const sElapsed = Math.floor(durationSec % 60);
             const elapsedStr = hElapsed > 0 ? `${hElapsed}:${mElapsed.toString().padStart(2, '0')}:${sElapsed.toString().padStart(2, '0')}` : `${mElapsed.toString().padStart(2, '0')}:${sElapsed.toString().padStart(2, '0')}`;
 
-            const avgPaceSecPerKm = distanceNum > 0 ? movingTimeSec / distanceNum : 0;
+            // Avg Pace = total_timer_time / distance
+            const timerTimeSec = session.total_timer_time || durationSec;
+            const avgPaceSecPerKm = distanceNum > 0 ? timerTimeSec / distanceNum : 0;
             const pM = Math.floor(avgPaceSecPerKm / 60);
             const pS = Math.floor(avgPaceSecPerKm % 60);
             const avgPaceStr = distanceNum > 0 ? `${pM}:${pS.toString().padStart(2,'0')} /km` : '--';
+
+            // Avg Moving Pace
+            const avgMovingPaceSecPerKm = distanceNum > 0 ? movingTimeSec / distanceNum : 0;
+            const pMMov = Math.floor(avgMovingPaceSecPerKm / 60);
+            const pSMov = Math.floor(avgMovingPaceSecPerKm % 60);
+            const avgMovingPaceStr = distanceNum > 0 ? `${pMMov}:${pSMov.toString().padStart(2,'0')} /km` : '--';
+
+            // Best Pace
+            const maxSpeedKph = session.enhanced_max_speed ?? session.max_speed ?? 0;
+            let bestPaceStr = '--';
+            if (maxSpeedKph > 0) {
+              const bestPaceSec = 3600 / maxSpeedKph;
+              const bpM = Math.floor(bestPaceSec / 60);
+              const bpS = Math.floor(bestPaceSec % 60);
+              bestPaceStr = `${bpM}:${bpS.toString().padStart(2,'0')} /km`;
+            }
 
             let calcMinElev = null;
             let calcMaxElev = null;
             if (chartData.length > 0) {
               const elevs = chartData.map(d => d.elevation).filter(e => e !== null);
               if (elevs.length > 0) {
-                calcMinElev = elevs.reduce((min, e) => e < min ? e : min, elevs[0]).toFixed(1);
-                calcMaxElev = elevs.reduce((max, e) => e > max ? e : max, elevs[0]).toFixed(1);
+                calcMinElev = elevs.reduce((min, e) => e < min ? e : min, elevs[0]).toFixed(0);
+                calcMaxElev = elevs.reduce((max, e) => e > max ? e : max, elevs[0]).toFixed(0);
               }
             }
 
@@ -94,19 +126,25 @@ export const parseActivityFile = async (file) => {
               duration: durationSec, 
               movingTimeStr: movingTimeStr,
               elapsedTimeStr: elapsedStr,
+              timerTimeStr: elapsedStr, // Fallback if we want to show exact Timer Time later
               avgPace: avgPaceStr,
+              avgMovingPace: avgMovingPaceStr,
+              bestPace: bestPaceStr,
               avgSpeed: session.enhanced_avg_speed ? session.enhanced_avg_speed.toFixed(1) : (session.avg_speed ? session.avg_speed.toFixed(1) : (distanceNum / (movingTimeSec / 3600)).toFixed(1)),
-              maxSpeed: session.enhanced_max_speed ? session.enhanced_max_speed.toFixed(1) : (session.max_speed ? session.max_speed.toFixed(1) : null),
+              maxSpeed: maxSpeedKph > 0 ? maxSpeedKph.toFixed(1) : null,
               avgHeartRate: session.avg_heart_rate || (heartRates.length ? Math.round(heartRates.reduce((a, b) => a + b, 0) / heartRates.length) : null),
               maxHeartRate: session.max_heart_rate || (heartRates.length ? Math.max(...heartRates) : null),
               calories: session.total_calories || null,
-              elevationGain: session.total_ascent || null,
-              totalDescent: session.total_descent || null,
-              minElevation: session.min_altitude ?? calcMinElev,
-              maxElevation: session.max_altitude ?? calcMaxElev,
-              avgCadence: session.avg_cadence || null,
-              maxCadence: session.max_cadence || null,
-              totalSteps: session.total_cycles || null,
+              restingCalories: session.resting_calories || null,
+              activeCalories: session.total_calories && session.resting_calories ? session.total_calories - session.resting_calories : null,
+              estSweatLoss: session.est_sweat_loss || null,
+              elevationGain: session.total_ascent != null ? Math.round(session.total_ascent * 1000) : null,
+              totalDescent: session.total_descent != null ? Math.round(session.total_descent * 1000) : null,
+              minElevation: session.min_altitude != null ? Math.round(session.min_altitude * 1000) : calcMinElev,
+              maxElevation: session.max_altitude != null ? Math.round(session.max_altitude * 1000) : calcMaxElev,
+              avgCadence: session.avg_cadence ? session.avg_cadence * 2 : null,
+              maxCadence: session.max_cadence ? session.max_cadence * 2 : null,
+              totalSteps: session.total_cycles ? session.total_cycles * 2 : null,
               startTime: session.start_time || (timestamps.length ? timestamps[0] : new Date())
             };
 

@@ -1191,10 +1191,10 @@ body {
     font-size: 0.65rem;
   }
   .activity-summary-row .telemetry-label {
-    font-size: 0.55rem;
+    font-size: 0.5rem;
   }
   .activity-summary-row .font-mono {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     text-align: right;
   }
 }
@@ -1224,13 +1224,13 @@ body {
 }
 
 .profile-minimized .import-data-floating {
-  bottom: 90px !important;
+  bottom: 100px !important;
 }
 
 @media (min-width: 769px) {
   .import-data-floating {
     bottom: 280px; /* same height as legend on desktop */
-    right: max(305px, calc(50vw - 419px)); /* tightened gap to legend panel */
+    right: max(325px, calc(50vw - 399px)); /* tightened gap to legend panel */
     left: auto;
     padding: 10px 16px; /* matches legend panel height */
     font-size: 0.8rem;

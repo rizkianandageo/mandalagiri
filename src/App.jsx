@@ -37,6 +37,9 @@ function App() {
     const file = e.target.files[0];
     if (!file) return;
     
+    // Clear input value so same file can be selected again
+    e.target.value = '';
+    
     try {
       // Set UI loading state if needed
       const result = await parseActivityFile(file);

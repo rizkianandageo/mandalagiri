@@ -35,11 +35,18 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
 
   // Efek untuk menggambar rute yang di-import
   useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded() || !importedRoute) return;
+    if (!map.current || !map.current.isStyleLoaded()) return;
 
     const sourceId = 'imported-route-source';
     const layerGlowId = 'imported-route-glow';
     const layerLineId = 'imported-route-line';
+
+    if (!importedRoute) {
+      if (map.current.getLayer(layerGlowId)) map.current.removeLayer(layerGlowId);
+      if (map.current.getLayer(layerLineId)) map.current.removeLayer(layerLineId);
+      if (map.current.getSource(sourceId)) map.current.removeSource(sourceId);
+      return;
+    }
 
     if (map.current.getSource(sourceId)) {
       map.current.getSource(sourceId).setData(importedRoute.geojson);

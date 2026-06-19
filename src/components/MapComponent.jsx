@@ -48,12 +48,21 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
       return;
     }
 
+    let displayGeojson = importedRoute.geojson;
+    try {
+      // Simplify route to improve WebGL rendering performance (tolerance: ~5 meters)
+      displayGeojson = turf.simplify(importedRoute.geojson, { tolerance: 0.00005, highQuality: false, mutate: false });
+    } catch (err) {
+      console.warn('Failed to simplify route:', err);
+    }
+
     if (map.current.getSource(sourceId)) {
-      map.current.getSource(sourceId).setData(importedRoute.geojson);
+      map.current.getSource(sourceId).setData(displayGeojson);
     } else {
       map.current.addSource(sourceId, {
         type: 'geojson',
-        data: importedRoute.geojson
+        data: displayGeojson,
+        tolerance: 1.5 // maplibre internal simplification
       });
 
       map.current.addLayer({
@@ -64,7 +73,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
           'line-color': '#0ea5e9',
           'line-width': 10,
           'line-opacity': 0.4,
-          'line-blur': 6
+          'line-blur': 4
         }
       });
 
@@ -80,7 +89,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
     }
 
     try {
-      const bbox = turf.bbox(importedRoute.geojson);
+      const bbox = turf.bbox(displayGeojson);
       map.current.fitBounds(bbox, {
         padding: { top: 50, bottom: 350, left: 50, right: 50 },
         pitch: 60,

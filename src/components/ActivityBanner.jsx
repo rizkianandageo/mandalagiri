@@ -17,15 +17,25 @@ const ActivityBanner = ({ routeData, onClose }) => {
 
   const { stats, chartData } = routeData;
 
-  const StatBlock = ({ label, value, unit, subtext }) => (
-    <div className="stat-block">
-      <div className="stat-value">
-        {value} <span className="stat-unit">{unit}</span>
+  const StatBlock = ({ label, value, unit, subtext }) => {
+    let displayValue = value;
+    if (typeof value === 'number') {
+      displayValue = value.toLocaleString('en-US');
+    } else if (typeof value === 'string' && !value.includes(':') && !isNaN(value) && value.trim() !== '' && value !== '--') {
+      const num = Number(value);
+      const decimalPlaces = value.includes('.') ? value.split('.')[1].length : 0;
+      displayValue = num.toLocaleString('en-US', { minimumFractionDigits: decimalPlaces, maximumFractionDigits: decimalPlaces });
+    }
+    return (
+      <div className="stat-block">
+        <div className="stat-value">
+          {displayValue} <span className="stat-unit">{unit}</span>
+        </div>
+        <div className="stat-label">{label}</div>
+        {subtext && <div className="stat-subtext">{subtext}</div>}
       </div>
-      <div className="stat-label">{label}</div>
-      {subtext && <div className="stat-subtext">{subtext}</div>}
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="activity-banner-overlay">
@@ -162,7 +172,7 @@ const ActivityBanner = ({ routeData, onClose }) => {
                       <XAxis dataKey="time" hide />
                       <YAxis domain={['auto', 'auto']} hide />
                       <Tooltip 
-                        formatter={(value) => [`${Number(value).toFixed(2)} m`, 'Elevation']}
+                        formatter={(value) => [`${Number(value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} m asl`, 'Elevation']}
                         contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} 
                       />
                       <Area type="monotone" dataKey="elevation" stroke="#84cc16" fill="#84cc16" fillOpacity={0.5} />
@@ -178,7 +188,7 @@ const ActivityBanner = ({ routeData, onClose }) => {
                       <XAxis dataKey="time" hide />
                       <YAxis hide />
                       <Tooltip 
-                        formatter={(value) => [`${Number(value).toFixed(2)} kph`, 'Speed']}
+                        formatter={(value) => [`${Number(value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} kph`, 'Speed']}
                         contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} 
                       />
                       <Area type="monotone" dataKey="speed" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.5} />
@@ -194,7 +204,7 @@ const ActivityBanner = ({ routeData, onClose }) => {
                       <XAxis dataKey="time" hide />
                       <YAxis domain={['auto', 'auto']} hide />
                       <Tooltip 
-                        formatter={(value) => [`${Number(value).toFixed(2)} bpm`, 'Heart Rate']}
+                        formatter={(value) => [`${Number(value).toLocaleString('en-US', {maximumFractionDigits: 0})} bpm`, 'Heart Rate']}
                         contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} 
                       />
                       <Area type="monotone" dataKey="heartRate" stroke="#ef4444" fill="#ef4444" fillOpacity={0.5} />
@@ -210,7 +220,7 @@ const ActivityBanner = ({ routeData, onClose }) => {
                       <XAxis dataKey="time" hide />
                       <YAxis hide />
                       <Tooltip 
-                        formatter={(value) => [`${Number(value).toFixed(2)} spm`, 'Cadence']}
+                        formatter={(value) => [`${Number(value).toLocaleString('en-US', {maximumFractionDigits: 0})} spm`, 'Cadence']}
                         contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} 
                       />
                       <Area type="monotone" dataKey="cadence" stroke="#f97316" fill="#f97316" fillOpacity={0.5} />

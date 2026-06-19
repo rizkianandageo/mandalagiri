@@ -1184,3 +1184,32 @@ body {
     border-radius: 0;
   }
 }
+
+.import-data-floating {
+  position: absolute;
+  z-index: 15;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.5);
+  color: var(--accent);
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.65rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px);
+  bottom: 430px; /* same height as legend on mobile */
+  left: 140px; /* shifted right to be left of legend */
+}
+
+@media (min-width: 769px) {
+  .import-data-floating {
+    bottom: 280px; /* same height as legend on desktop */
+    right: max(240px, calc(50vw - 480px)); /* positioned left of the legend */
+    left: auto;
+  }
+}

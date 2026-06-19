@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import MapComponent from './components/MapComponent';
 import ElevationProfile from './components/ElevationProfile';
+import LandingPage from './components/LandingPage';
 import { Mountain, Map, MapPin, Target, CloudRain, Sun, Wind, Cloud, Play, Square, Rewind, FastForward, Activity, ChevronUp, ChevronDown, Upload, Watch, Info } from 'lucide-react';
 import './index.css';
 import { parseActivityFile } from './utils/garminParser';
@@ -24,6 +25,7 @@ function App() {
   const [isDescMinimized, setIsDescMinimized] = useState(isMobile);
   const [isWeatherMinimized, setIsWeatherMinimized] = useState(isMobile);
   const [isLiveSituationMinimized, setIsLiveSituationMinimized] = useState(isMobile);
+  const [isActivitySummaryMinimized, setIsActivitySummaryMinimized] = useState(isMobile);
   const [isProfileMinimized, setIsProfileMinimized] = useState(false);
   const [showTrailLayer, setShowTrailLayer] = useState(true);
   const [showPoiLayer, setShowPoiLayer] = useState(true);
@@ -401,27 +403,6 @@ function App() {
             Mandalagiri
           </h1>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            {/* Upload Activity Button */}
-            <button 
-              onClick={() => fileInputRef.current && fileInputRef.current.click()}
-              style={{
-                background: 'rgba(34, 211, 238, 0.1)',
-                border: '1px solid rgba(34, 211, 238, 0.5)',
-                color: 'var(--accent)',
-                padding: '6px 12px',
-                borderRadius: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-                fontWeight: 'bold',
-                textTransform: 'uppercase'
-              }}
-              title="Import GPX/FIT/TCX"
-            >
-              <Watch size={14} /> Import Data
-            </button>
             <input 
               type="file" 
               ref={fileInputRef} 
@@ -502,6 +483,59 @@ function App() {
                   <div className="text-muted font-mono">Type</div><div className="text-muted font-mono">:</div><div>Active Stratovolcano</div>
                   <div className="text-muted font-mono">National Park</div><div className="text-muted font-mono">:</div><div>Bromo Tengger Semeru</div>
                   <div className="text-muted font-mono">Highest Peak</div><div className="text-muted font-mono">:</div><div>Mahameru</div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Imported Route Stats */}
+        {importedRoute && (
+          <div className={`hud-panel ${isActivitySummaryMinimized ? 'minimized' : ''}`} style={{
+            position: 'static', width: '100%', padding: '16px', marginTop: '16px'
+          }}>
+            <div className="hud-panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isActivitySummaryMinimized ? '0' : '16px' }}>
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1 }}
+                onClick={() => setIsActivitySummaryMinimized(!isActivitySummaryMinimized)}
+              >
+                <Watch size={14} /> Activity Summary
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setShowActivityBanner(true); }}
+                  title="Detail Information"
+                  style={{ background: 'transparent', border: 'none', color: '#38bdf8', cursor: 'pointer', display: 'flex' }}
+                >
+                  <Info size={16} />
+                </button>
+                <div style={{ cursor: 'pointer', display: 'flex' }} onClick={(e) => { e.stopPropagation(); setIsActivitySummaryMinimized(!isActivitySummaryMinimized); }}>
+                  {isActivitySummaryMinimized ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                </div>
+              </div>
+            </div>
+            
+            {!isActivitySummaryMinimized && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                  <span className="telemetry-label">Distance</span>
+                  <span className="font-mono text-accent" style={{ fontWeight: 'bold' }}>{importedRoute.stats.distance} <span style={{ fontSize: '0.7rem' }}>KM</span></span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                  <span className="telemetry-label">Avg Heart Rate</span>
+                  <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.avgHeartRate || '--'} <span style={{ fontSize: '0.7rem', color: '#f87171' }}>BPM</span></span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                  <span className="telemetry-label">Max Heart Rate</span>
+                  <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.maxHeartRate || '--'} <span style={{ fontSize: '0.7rem', color: '#f87171' }}>BPM</span></span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                  <span className="telemetry-label">Calories</span>
+                  <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.calories || '--'} <span style={{ fontSize: '0.7rem', color: '#fbbf24' }}>KCAL</span></span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span className="telemetry-label">Elevation Gain</span>
+                  <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.elevationGain || '--'} <span style={{ fontSize: '0.7rem' }}>M</span></span>
                 </div>
               </div>
             )}
@@ -632,81 +666,33 @@ function App() {
         </div>
       </div>
 
-      {/* Imported Route Stats */}
-      {importedRoute && (
-        <div className={`hud-panel ${isLiveSituationMinimized ? 'minimized' : ''}`} style={{
-          position: 'absolute',
-          top: '80px',
-          right: '24px',
-          width: '320px',
-          zIndex: 20
-        }}>
-          <div className="hud-panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div 
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1 }}
-              onClick={() => setIsLiveSituationMinimized(!isLiveSituationMinimized)}
-            >
-              <Watch size={14} /> Activity Summary
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button 
-                onClick={() => setShowActivityBanner(true)}
-                title="Detail Information"
-                style={{ background: 'transparent', border: 'none', color: '#38bdf8', cursor: 'pointer', display: 'flex' }}
-              >
-                <Info size={16} />
-              </button>
-              <div style={{ cursor: 'pointer', display: 'flex' }} onClick={() => setIsLiveSituationMinimized(!isLiveSituationMinimized)}>
-                {isLiveSituationMinimized ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-              </div>
-            </div>
-          </div>
-          
-          {!isLiveSituationMinimized && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
-                <span className="telemetry-label">Distance</span>
-                <span className="font-mono text-accent" style={{ fontWeight: 'bold' }}>{importedRoute.stats.distance} <span style={{ fontSize: '0.7rem' }}>KM</span></span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
-                <span className="telemetry-label">Avg Heart Rate</span>
-                <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.avgHeartRate || '--'} <span style={{ fontSize: '0.7rem', color: '#f87171' }}>BPM</span></span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
-                <span className="telemetry-label">Max Heart Rate</span>
-                <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.maxHeartRate || '--'} <span style={{ fontSize: '0.7rem', color: '#f87171' }}>BPM</span></span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
-                <span className="telemetry-label">Calories</span>
-                <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.calories || '--'} <span style={{ fontSize: '0.7rem', color: '#fbbf24' }}>KCAL</span></span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span className="telemetry-label">Elevation Gain</span>
-                <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.elevationGain || '--'} <span style={{ fontSize: '0.7rem' }}>M</span></span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Floating Import Data Button */}
+      <button 
+        className="import-data-floating"
+        onClick={() => fileInputRef.current && fileInputRef.current.click()}
+        title="Import GPX/FIT/TCX"
+      >
+        <Watch size={14} /> Import Data
+      </button>
 
       {/* Layer Legend / Switcher */}
       <div className={`layer-legend-panel ${isProfileMinimized ? 'minimized' : ''}`}>
         <div 
-          className={`legend-item ${!showTrailLayer ? 'legend-off' : ''}`}
+          className="legend-item"
           onClick={() => setShowTrailLayer(!showTrailLayer)}
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', opacity: showTrailLayer ? 1 : 0.5, transition: 'opacity 0.2s' }}
           title="Tampilkan/Sembunyikan Jalur Pendakian"
         >
-          <div className="legend-line-icon"></div>
+          <div style={{ width: '20px', height: '4px', background: 'linear-gradient(90deg, #10b981, #f59e0b, #ef4444)', borderRadius: '2px', boxShadow: '0 0 6px rgba(245, 158, 11, 0.4)' }}></div>
           <span>Jalur Pendakian</span>
         </div>
         <div 
-          className={`legend-item ${!showPoiLayer ? 'legend-off' : ''}`}
+          className="legend-item"
           onClick={() => setShowPoiLayer(!showPoiLayer)}
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', opacity: showPoiLayer ? 1 : 0.5, transition: 'opacity 0.2s' }}
           title="Tampilkan/Sembunyikan Point of Interest"
         >
-          <div className="legend-pin-wrapper">
-            <MapPin size={16} color="#3b82f6" fill="rgba(59, 130, 246, 0.2)" />
-          </div>
+          <MapPin size={16} color="#3b82f6" fill="#1e3a8a" />
           <span>Point of Interest</span>
         </div>
       </div>

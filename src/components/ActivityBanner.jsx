@@ -1,9 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import '../index.css';
 
 const ActivityBanner = ({ routeData, onClose }) => {
+  const [activeTab, setActiveTab] = useState('stats');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (!routeData) return null;
 
   const { stats, chartData } = routeData;
@@ -27,6 +36,10 @@ const ActivityBanner = ({ routeData, onClose }) => {
             <Activity size={20} />
             <span>Activity Details</span>
           </div>
+          <div className="banner-tabs">
+            <button className={`tab-button ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => setActiveTab('stats')}>Stats</button>
+            <button className={`tab-button ${activeTab === 'charts' ? 'active' : ''}`} onClick={() => setActiveTab('charts')}>Charts</button>
+          </div>
           <button className="close-button" onClick={onClose}>
             <X size={20} />
           </button>
@@ -34,70 +47,109 @@ const ActivityBanner = ({ routeData, onClose }) => {
 
         <div className="activity-banner-content">
           {/* Main Grid: Similar to Image 4 */}
-          <div className="stats-main-grid">
-            {/* Distance Column */}
-            <div className="stats-column">
-              <h3 className="column-title">Distance</h3>
-              <StatBlock label="Distance" value={stats.distance} unit="km" />
-              
-              <h3 className="column-title" style={{ marginTop: '24px' }}>Calories & Hydration</h3>
-              <StatBlock label="Resting Calories" value={stats.restingCalories || '--'} unit="" />
-              <StatBlock label="Active Calories" value={stats.activeCalories || '--'} unit="" />
-              <StatBlock label="Total Calories Burned" value={stats.calories || '--'} unit="" />
-              <StatBlock label="Calories Consumed" value={stats.caloriesConsumed} unit="" />
-              <StatBlock label="Calories Net" value={stats.caloriesNet} unit="" />
-              <StatBlock label="Est. Sweat Loss" value={stats.estSweatLoss || '--'} unit="ml" />
-              <StatBlock label="Fluid Consumed" value={stats.fluidConsumed} unit="ml" />
-              <StatBlock label="Fluid Net" value={stats.fluidNet} unit="ml" />
+                    {activeTab === 'stats' && (
+            isMobile ? (
+            <div className="stats-main-grid">
+              <div className="stats-column">
+                <h3 className="column-title">Distance</h3>
+                <StatBlock label="Distance" value={stats.distance} unit="km" />
+                <h3 className="column-title" style={{ marginTop: '24px' }}>Calories & Hydration</h3>
+                <StatBlock label="Resting Calories" value={stats.restingCalories || '--'} unit="" />
+                <StatBlock label="Active Calories" value={stats.activeCalories || '--'} unit="" />
+                <StatBlock label="Total Calories Burned" value={stats.calories || '--'} unit="" />
+                <StatBlock label="Calories Consumed" value={stats.caloriesConsumed} unit="" />
+                <StatBlock label="Calories Net" value={stats.caloriesNet} unit="" />
+                <StatBlock label="Est. Sweat Loss" value={stats.estSweatLoss || '--'} unit="ml" />
+                <StatBlock label="Fluid Consumed" value={stats.fluidConsumed} unit="ml" />
+                <StatBlock label="Fluid Net" value={stats.fluidNet} unit="ml" />
+              </div>
+              <div className="stats-column">
+                <h3 className="column-title">Heart Rate</h3>
+                <StatBlock label="Avg HR" value={stats.avgHeartRate || '--'} unit="bpm" subtext={stats.avgHrPct ? `${stats.avgHrPct}% Max • ${stats.avgHrZone} z` : null} />
+                <StatBlock label="Max HR" value={stats.maxHeartRate || '--'} unit="bpm" subtext={stats.maxHrPct ? `${stats.maxHrPct}% Max • ${stats.maxHrZone} z` : null} />
+                <h3 className="column-title" style={{ marginTop: '24px' }}>Timing</h3>
+                <StatBlock label="Time" value={stats.timerTimeStr || stats.elapsedTimeStr} unit="" />
+                <StatBlock label="Moving Time" value={stats.movingTimeStr} unit="" />
+                <StatBlock label="Elapsed Time" value={stats.elapsedTimeStr} unit="" />
+                <h3 className="column-title" style={{ marginTop: '24px' }}>Pace/Speed</h3>
+                <StatBlock label="Avg Pace" value={stats.avgPace} unit="" />
+                <StatBlock label="Avg Moving Pace" value={stats.avgMovingPace} unit="" />
+                <StatBlock label="Best Pace" value={stats.bestPace} unit="" />
+                <StatBlock label="Avg Speed" value={stats.avgSpeed || '--'} unit="kph" />
+                <StatBlock label="Avg Moving Speed" value={stats.avgMovingSpeed} unit="kph" />
+                <StatBlock label="Max Speed" value={stats.maxSpeed || '--'} unit="kph" />
+              </div>
+              <div className="stats-column">
+                <h3 className="column-title">Elevation</h3>
+                <StatBlock label="Ascent" value={stats.elevationGain || '--'} unit="m" />
+                <StatBlock label="Total Descent" value={stats.totalDescent || '--'} unit="m" />
+                <StatBlock label="Min Elev" value={stats.minElevation || '--'} unit="m" />
+                <StatBlock label="Max Elev" value={stats.maxElevation || '--'} unit="m" />
+                <h3 className="column-title" style={{ marginTop: '24px' }}>Cadence</h3>
+                <StatBlock label="Avg Cadence" value={stats.avgCadence || '--'} unit="spm" />
+                <StatBlock label="Max Cadence" value={stats.maxCadence || '--'} unit="spm" />
+                <StatBlock label="Steps" value={stats.totalSteps || '--'} unit="" />
+                <h3 className="column-title" style={{ marginTop: '24px' }}>Intensity Minutes</h3>
+                <StatBlock label="Moderate" value={stats.moderateIM} unit="min" />
+                <StatBlock label="Vigorous" value={stats.vigorousIM} unit="min" />
+                <StatBlock label="Total" value={stats.totalIM} unit="min" />
+              </div>
             </div>
-
-            {/* Heart Rate Column */}
-            <div className="stats-column">
-              <h3 className="column-title">Heart Rate</h3>
-              <StatBlock label="Avg HR" value={stats.avgHeartRate || '--'} unit="bpm" subtext={stats.avgHrPct ? `${stats.avgHrPct}% Max • ${stats.avgHrZone} z` : null} />
-              <StatBlock label="Max HR" value={stats.maxHeartRate || '--'} unit="bpm" subtext={stats.maxHrPct ? `${stats.maxHrPct}% Max • ${stats.maxHrZone} z` : null} />
-              
-              <h3 className="column-title" style={{ marginTop: '24px' }}>Timing</h3>
-              <StatBlock label="Time" value={stats.timerTimeStr || stats.elapsedTimeStr} unit="" />
-              <StatBlock label="Moving Time" value={stats.movingTimeStr} unit="" />
-              <StatBlock label="Elapsed Time" value={stats.elapsedTimeStr} unit="" />
+            ) : (
+            <div className="stats-main-grid">
+              <div className="stats-column">
+                <h3 className="column-title">Distance</h3>
+                <StatBlock label="Distance" value={stats.distance} unit="km" />
+                <h3 className="column-title" style={{ marginTop: '24px' }}>Calories & Hydration</h3>
+                <StatBlock label="Resting Calories" value={stats.restingCalories || '--'} unit="" />
+                <StatBlock label="Active Calories" value={stats.activeCalories || '--'} unit="" />
+                <StatBlock label="Total Calories Burned" value={stats.calories || '--'} unit="" />
+                <StatBlock label="Calories Consumed" value={stats.caloriesConsumed} unit="" />
+                <StatBlock label="Calories Net" value={stats.caloriesNet} unit="" />
+                <StatBlock label="Est. Sweat Loss" value={stats.estSweatLoss || '--'} unit="ml" />
+                <StatBlock label="Fluid Consumed" value={stats.fluidConsumed} unit="ml" />
+                <StatBlock label="Fluid Net" value={stats.fluidNet} unit="ml" />
+              </div>
+              <div className="stats-column">
+                <h3 className="column-title">Heart Rate</h3>
+                <StatBlock label="Avg HR" value={stats.avgHeartRate || '--'} unit="bpm" subtext={stats.avgHrPct ? `${stats.avgHrPct}% Max • ${stats.avgHrZone} z` : null} />
+                <StatBlock label="Max HR" value={stats.maxHeartRate || '--'} unit="bpm" subtext={stats.maxHrPct ? `${stats.maxHrPct}% Max • ${stats.maxHrZone} z` : null} />
+                <h3 className="column-title" style={{ marginTop: '24px' }}>Timing</h3>
+                <StatBlock label="Time" value={stats.timerTimeStr || stats.elapsedTimeStr} unit="" />
+                <StatBlock label="Moving Time" value={stats.movingTimeStr} unit="" />
+                <StatBlock label="Elapsed Time" value={stats.elapsedTimeStr} unit="" />
+              </div>
+              <div className="stats-column">
+                <h3 className="column-title">Elevation</h3>
+                <StatBlock label="Ascent" value={stats.elevationGain || '--'} unit="m" />
+                <StatBlock label="Total Descent" value={stats.totalDescent || '--'} unit="m" />
+                <StatBlock label="Min Elev" value={stats.minElevation || '--'} unit="m" />
+                <StatBlock label="Max Elev" value={stats.maxElevation || '--'} unit="m" />
+                <h3 className="column-title" style={{ marginTop: '24px' }}>Pace/Speed</h3>
+                <StatBlock label="Avg Pace" value={stats.avgPace} unit="" />
+                <StatBlock label="Avg Moving Pace" value={stats.avgMovingPace} unit="" />
+                <StatBlock label="Best Pace" value={stats.bestPace} unit="" />
+                <StatBlock label="Avg Speed" value={stats.avgSpeed || '--'} unit="kph" />
+                <StatBlock label="Avg Moving Speed" value={stats.avgMovingSpeed} unit="kph" />
+                <StatBlock label="Max Speed" value={stats.maxSpeed || '--'} unit="kph" />
+              </div>
+              <div className="stats-column">
+                <h3 className="column-title">Cadence</h3>
+                <StatBlock label="Avg Cadence" value={stats.avgCadence || '--'} unit="spm" />
+                <StatBlock label="Max Cadence" value={stats.maxCadence || '--'} unit="spm" />
+                <StatBlock label="Steps" value={stats.totalSteps || '--'} unit="" />
+                <h3 className="column-title" style={{ marginTop: '24px' }}>Intensity Minutes</h3>
+                <StatBlock label="Moderate" value={stats.moderateIM} unit="min" />
+                <StatBlock label="Vigorous" value={stats.vigorousIM} unit="min" />
+                <StatBlock label="Total" value={stats.totalIM} unit="min" />
+              </div>
             </div>
+            )
+          )}
 
-            {/* Elevation Column */}
-            <div className="stats-column">
-              <h3 className="column-title">Elevation</h3>
-              <StatBlock label="Ascent" value={stats.elevationGain || '--'} unit="m" />
-              <StatBlock label="Total Descent" value={stats.totalDescent || '--'} unit="m" />
-              <StatBlock label="Min Elev" value={stats.minElevation || '--'} unit="m" />
-              <StatBlock label="Max Elev" value={stats.maxElevation || '--'} unit="m" />
-            </div>
-
-            {/* Cadence & Intensity Column */}
-            <div className="stats-column">
-              <h3 className="column-title">Cadence</h3>
-              <StatBlock label="Avg Cadence" value={stats.avgCadence || '--'} unit="spm" />
-              <StatBlock label="Max Cadence" value={stats.maxCadence || '--'} unit="spm" />
-              <StatBlock label="Steps" value={stats.totalSteps || '--'} unit="" />
-
-              <h3 className="column-title" style={{ marginTop: '24px' }}>Intensity Minutes</h3>
-              <StatBlock label="Moderate" value={stats.moderateIM} unit="min" />
-              <StatBlock label="Vigorous" value={stats.vigorousIM} unit="min" />
-              <StatBlock label="Total" value={stats.totalIM} unit="min" />
-              
-              <h3 className="column-title" style={{ marginTop: '24px' }}>Pace/Speed</h3>
-              <StatBlock label="Avg Pace" value={stats.avgPace} unit="" />
-              <StatBlock label="Avg Moving Pace" value={stats.avgMovingPace} unit="" />
-              <StatBlock label="Best Pace" value={stats.bestPace} unit="" />
-              <StatBlock label="Avg Speed" value={stats.avgSpeed || '--'} unit="kph" />
-              <StatBlock label="Avg Moving Speed" value={stats.avgMovingSpeed} unit="kph" />
-              <StatBlock label="Max Speed" value={stats.maxSpeed || '--'} unit="kph" />
-            </div>
-          </div>
-
-          <hr className="divider" />
-
-          {/* Charts Section: Similar to Image 3 */}
-          <div className="charts-section">
+          {activeTab === 'charts' && (
+            <div style={{ marginTop: 0 }}>
+<div className="charts-section" style={{ marginTop: 0 }}>
             <h3 className="section-title">Charts</h3>
             
             {chartData && chartData.length > 0 ? (
@@ -160,7 +212,10 @@ const ActivityBanner = ({ routeData, onClose }) => {
               </div>
             )}
           </div>
-        </div>
+        
+            </div>
+          )}
+</div>
       </div>
     </div>
   );

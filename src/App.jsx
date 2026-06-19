@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import MapComponent from './components/MapComponent';
 import ElevationProfile from './components/ElevationProfile';
 import LandingPage from './components/LandingPage';
-import { Mountain, Map, MapPin, Target, CloudRain, Sun, Wind, Cloud, Play, Square, Rewind, FastForward, Activity, ChevronUp, ChevronDown, Upload, Watch, Info } from 'lucide-react';
+import { Mountain, Map, MapPin, Target, CloudRain, Sun, Wind, Cloud, Play, Square, Rewind, FastForward, Activity, ChevronUp, ChevronDown, Upload, Watch, Info, Trash2 } from 'lucide-react';
 import './index.css';
 import { parseActivityFile } from './utils/garminParser';
 import ActivityBanner from './components/ActivityBanner';
@@ -667,13 +667,33 @@ function App() {
       </div>
 
       {/* Floating Import Data Button */}
-      <button 
-        className="import-data-floating"
-        onClick={() => fileInputRef.current && fileInputRef.current.click()}
-        title="Import GPX/FIT/TCX"
-      >
-        <Watch size={14} /> Import Data
-      </button>
+      {!importedRoute ? (
+        <button 
+          className="import-data-floating"
+          onClick={() => fileInputRef.current && fileInputRef.current.click()}
+          title="Import GPX/FIT/TCX"
+        >
+          <Watch size={14} /> Import Data
+        </button>
+      ) : (
+        <div className="import-data-floating" style={{ padding: 0, overflow: 'hidden' }}>
+          <button 
+            onClick={() => fileInputRef.current && fileInputRef.current.click()}
+            style={{ background: 'transparent', border: 'none', color: 'inherit', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'inherit', fontWeight: 'inherit', textTransform: 'inherit' }}
+            title="Change Data"
+          >
+            <Watch size={14} /> Change
+          </button>
+          <div style={{ width: '1px', background: 'rgba(34, 211, 238, 0.3)', height: '16px' }}></div>
+          <button 
+            onClick={() => { setImportedRoute(null); setShowActivityBanner(false); }}
+            style={{ background: 'transparent', border: 'none', color: '#fca5a5', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'inherit', fontWeight: 'inherit', textTransform: 'inherit' }}
+            title="Remove Data"
+          >
+            <Trash2 size={14} /> Remove
+          </button>
+        </div>
+      )}
 
       {/* Layer Legend / Switcher */}
       <div className={`layer-legend-panel ${isProfileMinimized ? 'minimized' : ''}`}>

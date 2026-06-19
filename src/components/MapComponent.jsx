@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 
-const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList, showTrailLayer = true, showPoiLayer = true }) => {
+const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList, showTrailLayer = true, showPoiLayer = true, importedRoute }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const activePopupRef = useRef(null);
@@ -32,6 +32,58 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
       map.current.setLayoutProperty('poi-layer', 'visibility', showPoiLayer ? 'visible' : 'none');
     }
   }, [showPoiLayer]);
+
+  // Efek untuk menggambar rute yang di-import
+  useEffect(() => {
+    if (!map.current || !map.current.isStyleLoaded() || !importedRoute) return;
+
+    const sourceId = 'imported-route-source';
+    const layerGlowId = 'imported-route-glow';
+    const layerLineId = 'imported-route-line';
+
+    if (map.current.getSource(sourceId)) {
+      map.current.getSource(sourceId).setData(importedRoute.geojson);
+    } else {
+      map.current.addSource(sourceId, {
+        type: 'geojson',
+        data: importedRoute.geojson
+      });
+
+      map.current.addLayer({
+        id: layerGlowId,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': '#0ea5e9',
+          'line-width': 10,
+          'line-opacity': 0.4,
+          'line-blur': 6
+        }
+      });
+
+      map.current.addLayer({
+        id: layerLineId,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': '#38bdf8',
+          'line-width': 4
+        }
+      });
+    }
+
+    try {
+      const bbox = turf.bbox(importedRoute.geojson);
+      map.current.fitBounds(bbox, {
+        padding: { top: 50, bottom: 350, left: 50, right: 50 },
+        pitch: 60,
+        bearing: 0,
+        duration: 2000
+      });
+    } catch (err) {
+      console.error('Fit bounds error:', err);
+    }
+  }, [importedRoute]);
 
   // useEffect TERPISAH khusus untuk event listener profile hover
   useEffect(() => {

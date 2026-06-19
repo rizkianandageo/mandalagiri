@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import MapComponent from './components/MapComponent';
 import ElevationProfile from './components/ElevationProfile';
 import LandingPage from './components/LandingPage';
-import { Mountain, Map, MapPin, Target, CloudRain, Sun, Wind, Cloud, Play, Square, Rewind, FastForward, Activity, ChevronUp, ChevronDown } from 'lucide-react';
+import { Mountain, Map, MapPin, Target, CloudRain, Sun, Wind, Cloud, Play, Square, Rewind, FastForward, Activity, ChevronUp, ChevronDown, Upload, Watch } from 'lucide-react';
 import './index.css';
+import { parseActivityFile } from './utils/garminParser';
 
 function App() {
   const [hasStarted, setHasStarted] = useState(false);
@@ -26,6 +27,21 @@ function App() {
   const [isProfileMinimized, setIsProfileMinimized] = useState(false);
   const [showTrailLayer, setShowTrailLayer] = useState(true);
   const [showPoiLayer, setShowPoiLayer] = useState(true);
+  const [importedRoute, setImportedRoute] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      // Set UI loading state if needed
+      const result = await parseActivityFile(file);
+      setImportedRoute(result);
+    } catch (err) {
+      alert('Gagal membaca file: ' + err.message);
+    }
+  };
 
   useEffect(() => {
     if (isProfileMinimized) {
@@ -368,6 +384,7 @@ function App() {
           poiList={poiList}
           showTrailLayer={showTrailLayer}
           showPoiLayer={showPoiLayer}
+          importedRoute={importedRoute}
         />
       
       {/* HUD: Top Bar */}
@@ -381,7 +398,36 @@ function App() {
             <img src={`${import.meta.env.BASE_URL}img/Mandalagiri.png`} alt="Mandalagiri Logo" style={{ width: '28px', height: '28px', marginRight: '8px', objectFit: 'contain' }} />
             Mandalagiri
           </h1>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {/* Upload Activity Button */}
+            <button 
+              onClick={() => fileInputRef.current && fileInputRef.current.click()}
+              style={{
+                background: 'rgba(34, 211, 238, 0.1)',
+                border: '1px solid rgba(34, 211, 238, 0.5)',
+                color: 'var(--accent)',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+                fontWeight: 'bold',
+                textTransform: 'uppercase'
+              }}
+              title="Import GPX/FIT/TCX"
+            >
+              <Watch size={14} /> Import Data
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              style={{ display: 'none' }} 
+              accept=".gpx,.tcx,.fit" 
+              onChange={handleFileUpload} 
+            />
+
             {/* Switch Mountain Dropdown */}
             <div style={{ position: 'relative', display: 'inline-block' }}>
               <Mountain size={14} className="topbar-icon" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#000', zIndex: 2 }} />
@@ -583,6 +629,49 @@ function App() {
           )}
         </div>
       </div>
+
+      {/* Imported Route Stats */}
+      {importedRoute && (
+        <div className={`hud-panel ${isLiveSituationMinimized ? 'minimized' : ''}`} style={{
+          position: 'absolute',
+          top: '80px',
+          right: '24px',
+          width: '320px',
+          zIndex: 20
+        }}>
+          <div className="hud-panel-title" onClick={() => setIsLiveSituationMinimized(!isLiveSituationMinimized)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Watch size={14} /> Activity Summary
+            </div>
+            {isLiveSituationMinimized ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+          </div>
+          
+          {!isLiveSituationMinimized && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                <span className="telemetry-label">Distance</span>
+                <span className="font-mono text-accent" style={{ fontWeight: 'bold' }}>{importedRoute.stats.distance} <span style={{ fontSize: '0.7rem' }}>KM</span></span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                <span className="telemetry-label">Avg Heart Rate</span>
+                <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.avgHeartRate || '--'} <span style={{ fontSize: '0.7rem', color: '#f87171' }}>BPM</span></span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                <span className="telemetry-label">Max Heart Rate</span>
+                <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.maxHeartRate || '--'} <span style={{ fontSize: '0.7rem', color: '#f87171' }}>BPM</span></span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                <span className="telemetry-label">Calories</span>
+                <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.calories || '--'} <span style={{ fontSize: '0.7rem', color: '#fbbf24' }}>KCAL</span></span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span className="telemetry-label">Elevation Gain</span>
+                <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.elevationGain || '--'} <span style={{ fontSize: '0.7rem' }}>M</span></span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Layer Legend / Switcher */}
       <div className={`layer-legend-panel ${isProfileMinimized ? 'minimized' : ''}`}>

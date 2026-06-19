@@ -48,10 +48,10 @@ export const parseActivityFile = async (file) => {
                   chartData.push({
                     time: timeStr,
                     distance: record.distance || 0, // usually km or m depending on parser options
-                    elevation: record.altitude || null,
-                    heartRate: record.heart_rate || null,
-                    speed: record.speed || null,
-                    cadence: record.cadence || null
+                    elevation: record.enhanced_altitude ?? record.altitude ?? null,
+                    heartRate: record.heart_rate ?? null,
+                    speed: record.enhanced_speed ?? record.speed ?? null,
+                    cadence: record.cadence ?? null
                   });
                 }
               });
@@ -79,21 +79,31 @@ export const parseActivityFile = async (file) => {
             const pS = Math.floor(avgPaceSecPerKm % 60);
             const avgPaceStr = distanceNum > 0 ? `${pM}:${pS.toString().padStart(2,'0')} /km` : '--';
 
+            let calcMinElev = null;
+            let calcMaxElev = null;
+            if (chartData.length > 0) {
+              const elevs = chartData.map(d => d.elevation).filter(e => e !== null);
+              if (elevs.length > 0) {
+                calcMinElev = elevs.reduce((min, e) => e < min ? e : min, elevs[0]).toFixed(1);
+                calcMaxElev = elevs.reduce((max, e) => e > max ? e : max, elevs[0]).toFixed(1);
+              }
+            }
+
             const stats = {
               distance: distanceNum ? distanceNum.toFixed(2) : '0.00',
               duration: durationSec, 
               movingTimeStr: movingTimeStr,
               elapsedTimeStr: elapsedStr,
               avgPace: avgPaceStr,
-              avgSpeed: session.avg_speed ? session.avg_speed.toFixed(1) : (distanceNum / (movingTimeSec / 3600)).toFixed(1),
-              maxSpeed: session.max_speed ? session.max_speed.toFixed(1) : null,
+              avgSpeed: session.enhanced_avg_speed ? session.enhanced_avg_speed.toFixed(1) : (session.avg_speed ? session.avg_speed.toFixed(1) : (distanceNum / (movingTimeSec / 3600)).toFixed(1)),
+              maxSpeed: session.enhanced_max_speed ? session.enhanced_max_speed.toFixed(1) : (session.max_speed ? session.max_speed.toFixed(1) : null),
               avgHeartRate: session.avg_heart_rate || (heartRates.length ? Math.round(heartRates.reduce((a, b) => a + b, 0) / heartRates.length) : null),
               maxHeartRate: session.max_heart_rate || (heartRates.length ? Math.max(...heartRates) : null),
               calories: session.total_calories || null,
               elevationGain: session.total_ascent || null,
               totalDescent: session.total_descent || null,
-              minElevation: session.min_altitude || null,
-              maxElevation: session.max_altitude || null,
+              minElevation: session.min_altitude ?? calcMinElev,
+              maxElevation: session.max_altitude ?? calcMaxElev,
               avgCadence: session.avg_cadence || null,
               maxCadence: session.max_cadence || null,
               totalSteps: session.total_cycles || null,

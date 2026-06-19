@@ -50,7 +50,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
 
   // Efek untuk menggambar dan mengupdate marker GPS User secara real-time
   useEffect(() => {
-    if (!map.current || isOutsideBounds || !userLocation) {
+    if (!map.current || !userLocation) {
       if (userMarkerRef.current) {
         userMarkerRef.current.remove();
         userMarkerRef.current = null;

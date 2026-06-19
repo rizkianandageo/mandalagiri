@@ -488,27 +488,23 @@ function App() {
             <span className="telemetry-label">My Location (GPS)</span>
             <button 
               onClick={() => {
-                if(!isOutsideBounds && window.mapConsole && window.mapConsole.setCamera) {
+                if(window.mapConsole && window.mapConsole.setCamera) {
                   window.mapConsole.setCamera(userLocation.lng, userLocation.lat, 15.5, 65, 0);
                 }
               }}
-              disabled={isOutsideBounds}
               style={{
-                background: isOutsideBounds ? 'rgba(255,255,255,0.05)' : 'rgba(34, 211, 238, 0.1)', 
-                border: isOutsideBounds ? '1px solid rgba(255,255,255,0.1)' : '1px solid var(--accent)', 
-                color: isOutsideBounds ? 'rgba(255,255,255,0.3)' : 'var(--accent)',
-                padding: '4px 8px', borderRadius: '4px', fontSize: '0.65rem', cursor: isOutsideBounds ? 'not-allowed' : 'pointer', 
+                background: 'rgba(34, 211, 238, 0.1)', 
+                border: '1px solid var(--accent)', 
+                color: 'var(--accent)',
+                padding: '4px 8px', borderRadius: '4px', fontSize: '0.65rem', cursor: 'pointer', 
                 display: 'flex', alignItems: 'center', gap: '4px'
               }}>
               <Target size={12} /> Fly to GPS
             </button>
           </div>
           <div className="font-mono text-main live-sit-coords-box" style={{ fontSize: '0.9rem', fontWeight: 600, marginTop: '8px' }}>
-            {isOutsideBounds ? (
-              <span className="live-sit-outside" style={{ color: '#ef4444', fontSize: '0.8rem' }}>Outside mountain area.</span>
-            ) : (
-              <span className="live-sit-coords">{`${Math.abs(userLocation.lat).toFixed(4)}° S, ${userLocation.lng.toFixed(4)}° E`}</span>
-            )}
+            <span className="live-sit-coords">{`${Math.abs(userLocation.lat).toFixed(4)}° ${userLocation.lat >= 0 ? 'N' : 'S'}, ${Math.abs(userLocation.lng).toFixed(4)}° ${userLocation.lng >= 0 ? 'E' : 'W'}`}</span>
+            {isOutsideBounds && <div style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '2px' }}>Outside mountain area.</div>}
           </div>
         </div>
 

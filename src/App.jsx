@@ -23,15 +23,6 @@ function App() {
   const [isDescMinimized, setIsDescMinimized] = useState(isMobile);
   const [isWeatherMinimized, setIsWeatherMinimized] = useState(isMobile);
   const [isLiveSituationMinimized, setIsLiveSituationMinimized] = useState(isMobile);
-  const [isProfileMinimized, setIsProfileMinimized] = useState(false);
-
-  useEffect(() => {
-    if (isProfileMinimized) {
-      document.body.classList.add('profile-minimized');
-    } else {
-      document.body.classList.remove('profile-minimized');
-    }
-  }, [isProfileMinimized]);
   
   const [segmentStats, setSegmentStats] = useState({
     jarakTempuh: "0.0",
@@ -581,187 +572,166 @@ function App() {
       </div>
 
       {/* HUD: Bottom Panel - Route Profile & Controls */}
-      <div className={`hud-panel hud-bottom ${isProfileMinimized ? 'minimized' : ''}`}>
+      <div className="hud-panel hud-bottom">
         
-        {/* Header HUD Bottom */}
-        <div 
-          className="hud-panel-title" 
-          onClick={() => setIsProfileMinimized(!isProfileMinimized)}
-          style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            cursor: 'pointer',
-            margin: 0,
-            paddingBottom: isProfileMinimized ? 0 : '8px'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Kiri: Sisa Jarak & ETA */}
+        <div className="segment-profile-col" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="hud-panel-title" style={{ marginBottom: '8px' }}>
             <Activity size={14} /> Segment Profile
           </div>
-          <button 
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-          >
-            {isProfileMinimized ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-        </div>
-
-        {!isProfileMinimized && (
-          <div className="hud-bottom-content">
-            {/* Kiri: Sisa Jarak & ETA */}
-            <div className="segment-profile-col" style={{ display: 'flex', flexDirection: 'column' }}>
-              <div className="segment-stats-container">
-                <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span className="telemetry-label">Distance</span>
-                  <span className="font-mono text-accent stat-val-dist" style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px' }}>
-                    {dynJarakTempuh} <span className="telemetry-unit text-accent">KM</span>
-                  </span>
-                </div>
-                
-                <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span className="telemetry-label">Estimated Time</span>
-                  <span className="font-mono stat-val-time" style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>
-                    {dynWaktuStr}
-                  </span>
-                </div>
-
-                <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span className="telemetry-label">Route</span>
-                  <div className="font-mono trail-char-box" style={{ 
-                    color: segmentStats.difficultyColor,
-                    padding: '4px 8px',
-                    background: 'rgba(255,255,255,0.05)',
-                    borderRadius: '4px',
-                    border: `1px solid ${segmentStats.difficultyColor}`,
-                    marginTop: '2px',
-                    display: 'inline-flex',
-                    flexDirection: 'column',
-                    width: 'max-content'
-                  }}>
-                    <span className="trail-char-main" style={{ fontSize: '0.85rem', fontWeight: 700 }}>{segmentStats.diffMain}</span>
-                    {segmentStats.diffSub && <span className="trail-char-sub" style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '2px' }}>{segmentStats.diffSub}</span>}
-                  </div>
-                </div>
-              </div>
+          
+          <div className="segment-stats-container">
+            <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
+              <span className="telemetry-label">Distance</span>
+              <span className="font-mono text-accent stat-val-dist" style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px' }}>
+                {dynJarakTempuh} <span className="telemetry-unit text-accent">KM</span>
+              </span>
+            </div>
+            
+            <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
+              <span className="telemetry-label">Estimated Time</span>
+              <span className="font-mono stat-val-time" style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>
+                {dynWaktuStr}
+              </span>
             </div>
 
-            {/* Tengah: Grafik Elevasi & Dropdown POI */}
-            <div className="elevation-profile-col" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <div className="route-select-row" style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="telemetry-label" style={{ margin: 0 }}>Start:</span>
-                  <select 
-                    value={startPoi?.index ?? ''}
-                    onChange={(e) => {
-                      const idx = parseInt(e.target.value);
-                      const poi = poiList.find(p => p.index === idx);
-                      if (poi) setStartPoi(poi);
-                    }}
-                    className="font-mono"
-                    style={{ background: 'rgba(15,23,42,0.8)', color: '#fff', border: '1px solid var(--accent)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', outline: 'none', cursor: 'pointer' }}
-                  >
-                    {poiList.map((poi, i) => (
-                      <option key={i} value={poi.index} disabled={endPoi && poi.index >= endPoi.index}>{poi.name}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="telemetry-label" style={{ margin: 0 }}>Destination:</span>
-                  <select 
-                    value={endPoi?.index ?? ''}
-                    onChange={(e) => {
-                      const idx = parseInt(e.target.value);
-                      const poi = poiList.find(p => p.index === idx);
-                      if (poi) setEndPoi(poi);
-                    }}
-                    className="font-mono"
-                    style={{ background: 'rgba(15,23,42,0.8)', color: '#fff', border: '1px solid var(--accent)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', outline: 'none', cursor: 'pointer' }}
-                  >
-                    {poiList.map((poi, i) => (
-                      <option key={i} value={poi.index} disabled={startPoi && poi.index <= startPoi.index}>{poi.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              
-              <div style={{ flex: 1, position: 'relative' }}>
-                 <ElevationProfile data={slicedProfileData} currentDistance={activeTelemetry?.distance} />
-              </div>
-            </div>
-
-            {/* Kanan: Kontrol Simulasi */}
-            <div className="simulation-controls-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: '120px', position: 'relative' }}>
-              <div className="simulation-ornament-container" style={{ position: 'relative', width: '96px', height: '96px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {/* Ornamen HUD */}
-                <div className="sci-fi-ornament" style={{ borderColor: isSimulating ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 211, 238, 0.4)' }}></div>
-                <div className="sci-fi-ornament-2" style={{ 
-                  borderColor: isSimulating ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 211, 238, 0.1)' 
-                }}>
-                  <div style={{ 
-                    position: 'absolute', top: '-4px', left: '50%', transform: 'translateX(-50%)', 
-                    width: '4px', height: '8px', background: isSimulating ? '#ef4444' : 'var(--accent)',
-                    boxShadow: isSimulating ? '0 0 8px #ef4444' : '0 0 8px var(--accent)'
-                  }}></div>
-                  <div style={{ 
-                    position: 'absolute', bottom: '-4px', left: '50%', transform: 'translateX(-50%)', 
-                    width: '4px', height: '8px', background: isSimulating ? '#ef4444' : 'var(--accent)',
-                    boxShadow: isSimulating ? '0 0 8px #ef4444' : '0 0 8px var(--accent)'
-                  }}></div>
-                  <div style={{ 
-                    position: 'absolute', left: '-4px', top: '50%', transform: 'translateY(-50%)', 
-                    width: '8px', height: '4px', background: isSimulating ? '#ef4444' : 'var(--accent)',
-                    boxShadow: isSimulating ? '0 0 8px #ef4444' : '0 0 8px var(--accent)'
-                  }}></div>
-                  <div style={{ 
-                    position: 'absolute', right: '-4px', top: '50%', transform: 'translateY(-50%)', 
-                    width: '8px', height: '4px', background: isSimulating ? '#ef4444' : 'var(--accent)',
-                    boxShadow: isSimulating ? '0 0 8px #ef4444' : '0 0 8px var(--accent)'
-                  }}></div>
-                </div>
-
-                {/* Main Button */}
-                <button 
-                  className="sim-play-btn"
-                  onClick={toggleSimulation}
-                  style={{
-                    width: '56px',
-                    height: '56px',
-                    borderRadius: '50%',
-                    background: isSimulating ? '#ef4444' : 'var(--accent)',
-                    color: isSimulating ? '#fff' : '#000',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: isSimulating ? '0 0 20px rgba(239, 68, 68, 0.6)' : '0 0 20px rgba(34, 211, 238, 0.6)',
-                    transition: 'all 0.3s',
-                    position: 'relative',
-                    zIndex: 2
-                  }}
-                >
-                  {isSimulating ? <Square size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" style={{ marginLeft: '4px' }} />}
-                </button>
-              </div>
-
-              <div style={{ 
-                fontFamily: '"Share Tech Mono", "Courier New", monospace',
-                fontSize: '0.65rem', 
-                fontWeight: 700, 
-                color: isSimulating ? '#ef4444' : 'var(--accent)', 
-                letterSpacing: '1px', 
-                textAlign: 'center', 
-                lineHeight: '1.4',
-                textTransform: 'uppercase',
-                textShadow: isSimulating ? '0 0 8px rgba(239,68,68,0.5)' : '0 0 8px rgba(34,211,238,0.5)',
-                marginTop: '8px'
+            <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
+              <span className="telemetry-label">Route</span>
+              <div className="font-mono trail-char-box" style={{ 
+                color: segmentStats.difficultyColor,
+                padding: '4px 8px',
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: '4px',
+                border: `1px solid ${segmentStats.difficultyColor}`,
+                marginTop: '2px',
+                display: 'inline-flex',
+                flexDirection: 'column',
+                width: 'max-content'
               }}>
-                {isSimulating ? <>Stop<br/>Simulation</> : <>Navigation<br/>Simulation</>}
+                <span className="trail-char-main" style={{ fontSize: '0.85rem', fontWeight: 700 }}>{segmentStats.diffMain}</span>
+                {segmentStats.diffSub && <span className="trail-char-sub" style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '2px' }}>{segmentStats.diffSub}</span>}
               </div>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Tengah: Grafik Elevasi & Dropdown POI */}
+        <div className="elevation-profile-col" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div className="route-select-row" style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="telemetry-label" style={{ margin: 0 }}>Start:</span>
+              <select 
+                value={startPoi?.index ?? ''}
+                onChange={(e) => {
+                  const idx = parseInt(e.target.value);
+                  const poi = poiList.find(p => p.index === idx);
+                  if (poi) setStartPoi(poi);
+                }}
+                className="font-mono"
+                style={{ background: 'rgba(15,23,42,0.8)', color: '#fff', border: '1px solid var(--accent)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', outline: 'none', cursor: 'pointer' }}
+              >
+                {poiList.map((poi, i) => (
+                  <option key={i} value={poi.index} disabled={endPoi && poi.index >= endPoi.index}>{poi.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="telemetry-label" style={{ margin: 0 }}>Destination:</span>
+              <select 
+                value={endPoi?.index ?? ''}
+                onChange={(e) => {
+                  const idx = parseInt(e.target.value);
+                  const poi = poiList.find(p => p.index === idx);
+                  if (poi) setEndPoi(poi);
+                }}
+                className="font-mono"
+                style={{ background: 'rgba(15,23,42,0.8)', color: '#fff', border: '1px solid var(--accent)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', outline: 'none', cursor: 'pointer' }}
+              >
+                {poiList.map((poi, i) => (
+                  <option key={i} value={poi.index} disabled={startPoi && poi.index <= startPoi.index}>{poi.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          <div style={{ flex: 1, position: 'relative' }}>
+             <ElevationProfile data={slicedProfileData} currentDistance={activeTelemetry?.distance} />
+          </div>
+        </div>
+
+        {/* Kanan: Kontrol Simulasi */}
+        <div className="simulation-controls-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: '120px', position: 'relative' }}>
+          
+          <div className="simulation-ornament-container" style={{ position: 'relative', width: '96px', height: '96px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Ornamen HUD */}
+            <div className="sci-fi-ornament" style={{ borderColor: isSimulating ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 211, 238, 0.4)' }}></div>
+            <div className="sci-fi-ornament-2" style={{ 
+              borderColor: isSimulating ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 211, 238, 0.1)' 
+            }}>
+              <div style={{ 
+                position: 'absolute', top: '-4px', left: '50%', transform: 'translateX(-50%)', 
+                width: '4px', height: '8px', background: isSimulating ? '#ef4444' : 'var(--accent)',
+                boxShadow: isSimulating ? '0 0 8px #ef4444' : '0 0 8px var(--accent)'
+              }}></div>
+              <div style={{ 
+                position: 'absolute', bottom: '-4px', left: '50%', transform: 'translateX(-50%)', 
+                width: '4px', height: '8px', background: isSimulating ? '#ef4444' : 'var(--accent)',
+                boxShadow: isSimulating ? '0 0 8px #ef4444' : '0 0 8px var(--accent)'
+              }}></div>
+              <div style={{ 
+                position: 'absolute', left: '-4px', top: '50%', transform: 'translateY(-50%)', 
+                width: '8px', height: '4px', background: isSimulating ? '#ef4444' : 'var(--accent)',
+                boxShadow: isSimulating ? '0 0 8px #ef4444' : '0 0 8px var(--accent)'
+              }}></div>
+              <div style={{ 
+                position: 'absolute', right: '-4px', top: '50%', transform: 'translateY(-50%)', 
+                width: '8px', height: '4px', background: isSimulating ? '#ef4444' : 'var(--accent)',
+                boxShadow: isSimulating ? '0 0 8px #ef4444' : '0 0 8px var(--accent)'
+              }}></div>
+            </div>
+
+            {/* Main Button */}
+            <button 
+              className="sim-play-btn"
+              onClick={toggleSimulation}
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                background: isSimulating ? '#ef4444' : 'var(--accent)',
+                color: isSimulating ? '#fff' : '#000',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: isSimulating ? '0 0 20px rgba(239, 68, 68, 0.6)' : '0 0 20px rgba(34, 211, 238, 0.6)',
+                transition: 'all 0.3s',
+                position: 'relative',
+                zIndex: 2
+              }}
+            >
+              {isSimulating ? <Square size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" style={{ marginLeft: '4px' }} />}
+            </button>
+          </div>
+
+          <div style={{ 
+            fontFamily: '"Share Tech Mono", "Courier New", monospace',
+            fontSize: '0.65rem', 
+            fontWeight: 700, 
+            color: isSimulating ? '#ef4444' : 'var(--accent)', 
+            letterSpacing: '1px', 
+            textAlign: 'center', 
+            lineHeight: '1.4',
+            textTransform: 'uppercase',
+            textShadow: isSimulating ? '0 0 8px rgba(239,68,68,0.5)' : '0 0 8px rgba(34,211,238,0.5)',
+            marginTop: '8px'
+          }}>
+            {isSimulating ? <>Stop<br/>Simulation</> : <>Navigation<br/>Simulation</>}
+          </div>
+        </div>
+
       </div>
     </>
   );

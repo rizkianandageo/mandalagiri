@@ -1298,6 +1298,18 @@ body {
     grid-template-columns: 1fr;
     gap: 32px;
   }
+  .stats-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 12px;
+  }
+  .column-title {
+    grid-column: 1 / -1;
+    margin-top: 24px !important;
+  }
+  .stats-column .column-title:first-child {
+    margin-top: 0 !important;
+  }
   .activity-banner-header {
     flex-direction: column;
     gap: 16px;

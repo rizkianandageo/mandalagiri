@@ -222,6 +222,7 @@ const ActivityBanner = ({ routeData, onClose }) => {
                       <Tooltip 
                         formatter={(value) => [`${Number(value).toLocaleString('en-US', {maximumFractionDigits: 0})} spm`, 'Cadence']}
                         contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} 
+                        itemStyle={{ color: '#f97316' }}
                       />
                       <Line type="monotone" dataKey="cadence" stroke="none" dot={{ r: 1.5, fill: '#f97316', strokeWidth: 0 }} activeDot={{ r: 4, fill: '#f97316', strokeWidth: 0 }} isAnimationActive={false} connectNulls={false} />
                     </LineChart>

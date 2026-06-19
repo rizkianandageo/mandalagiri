@@ -905,10 +905,10 @@ body {
   }
   
   .profile-minimized .maplibregl-ctrl-bottom-right {
-    bottom: 75px !important;
+    bottom: 90px !important;
   }
   .profile-minimized .maplibregl-ctrl-bottom-left {
-    bottom: 75px !important;
+    bottom: 90px !important;
   }
 
   .maplibregl-ctrl-attrib {

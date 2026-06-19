@@ -376,11 +376,12 @@ body {
   display: none !important;
 }
 
-/* Custom positioning for MapLibre Controls */
+/* Posisi Default MapLibre Controls untuk Desktop */
 .maplibregl-ctrl-bottom-right {
   bottom: 10px !important;
   right: 10px !important;
   z-index: 5;
+  transition: bottom 0.3s ease-in-out;
 }
 .maplibregl-ctrl-bottom-left {
   /* Di atas card profile (24px + 240px + 16px gap = 280px) */
@@ -388,6 +389,11 @@ body {
   /* Rata kiri dengan card profile: max(24px padding, 50vw - 700px max-width) */
   left: max(24px, calc(50vw - 700px)) !important;
   z-index: 5;
+  transition: bottom 0.3s ease-in-out;
+}
+
+.profile-minimized .maplibregl-ctrl-bottom-left {
+  bottom: 80px !important;
 }
 
 /* Restyle MapLibre controls for dark mode to match HUD */
@@ -876,6 +882,7 @@ body {
   .maplibregl-ctrl-zoom-out {
     display: none !important;
   }
+  
   .maplibregl-ctrl-bottom-right {
     bottom: 365px !important;
     right: 10px !important;
@@ -886,6 +893,14 @@ body {
     left: 10px !important;
     z-index: 50 !important;
   }
+  
+  .profile-minimized .maplibregl-ctrl-bottom-right {
+    bottom: 60px !important;
+  }
+  .profile-minimized .maplibregl-ctrl-bottom-left {
+    bottom: 60px !important;
+  }
+
   .maplibregl-ctrl-attrib {
     position: fixed !important;
     bottom: 5px !important;

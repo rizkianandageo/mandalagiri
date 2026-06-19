@@ -23,6 +23,15 @@ function App() {
   const [isDescMinimized, setIsDescMinimized] = useState(isMobile);
   const [isWeatherMinimized, setIsWeatherMinimized] = useState(isMobile);
   const [isLiveSituationMinimized, setIsLiveSituationMinimized] = useState(isMobile);
+  const [isProfileMinimized, setIsProfileMinimized] = useState(false);
+
+  useEffect(() => {
+    if (isProfileMinimized) {
+      document.body.classList.add('profile-minimized');
+    } else {
+      document.body.classList.remove('profile-minimized');
+    }
+  }, [isProfileMinimized]);
   
   const [segmentStats, setSegmentStats] = useState({
     jarakTempuh: "0.0",
@@ -572,50 +581,81 @@ function App() {
       </div>
 
       {/* HUD: Bottom Panel - Route Profile & Controls */}
-      <div className="hud-panel hud-bottom">
+      <div className={`hud-panel hud-bottom ${isProfileMinimized ? 'minimized' : ''}`} style={isProfileMinimized ? { height: 'auto', minHeight: 0 } : {}}>
         
         {/* Kiri: Sisa Jarak & ETA */}
         <div className="segment-profile-col" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="hud-panel-title" style={{ marginBottom: '8px' }}>
-            <Activity size={14} /> Segment Profile
+          <div className="hud-panel-title" style={{ 
+            marginBottom: isProfileMinimized ? '0' : '8px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer'
+          }} onClick={() => setIsProfileMinimized(!isProfileMinimized)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Activity size={14} /> Segment Profile
+            </div>
+            <button 
+              style={{
+                background: 'rgba(34, 211, 238, 0.15)',
+                border: '1px solid var(--accent)',
+                color: 'var(--accent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                padding: '4px',
+                borderRadius: '6px',
+                boxShadow: '0 0 10px rgba(34, 211, 238, 0.2)',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(34, 211, 238, 0.3)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(34, 211, 238, 0.4)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(34, 211, 238, 0.15)'; e.currentTarget.style.boxShadow = '0 0 10px rgba(34, 211, 238, 0.2)'; }}
+            >
+              {isProfileMinimized ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
           </div>
           
-          <div className="segment-stats-container">
-            <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="telemetry-label">Distance</span>
-              <span className="font-mono text-accent stat-val-dist" style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px' }}>
-                {dynJarakTempuh} <span className="telemetry-unit text-accent">KM</span>
-              </span>
-            </div>
-            
-            <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="telemetry-label">Estimated Time</span>
-              <span className="font-mono stat-val-time" style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>
-                {dynWaktuStr}
-              </span>
-            </div>
+          {!isProfileMinimized && (
+            <div className="segment-stats-container">
+              <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
+                <span className="telemetry-label">Distance</span>
+                <span className="font-mono text-accent stat-val-dist" style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px' }}>
+                  {dynJarakTempuh} <span className="telemetry-unit text-accent">KM</span>
+                </span>
+              </div>
+              
+              <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
+                <span className="telemetry-label">Estimated Time</span>
+                <span className="font-mono stat-val-time" style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>
+                  {dynWaktuStr}
+                </span>
+              </div>
 
-            <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="telemetry-label">Route</span>
-              <div className="font-mono trail-char-box" style={{ 
-                color: segmentStats.difficultyColor,
-                padding: '4px 8px',
-                background: 'rgba(255,255,255,0.05)',
-                borderRadius: '4px',
-                border: `1px solid ${segmentStats.difficultyColor}`,
-                marginTop: '2px',
-                display: 'inline-flex',
-                flexDirection: 'column',
-                width: 'max-content'
-              }}>
-                <span className="trail-char-main" style={{ fontSize: '0.85rem', fontWeight: 700 }}>{segmentStats.diffMain}</span>
-                {segmentStats.diffSub && <span className="trail-char-sub" style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '2px' }}>{segmentStats.diffSub}</span>}
+              <div className="segment-stat-item" style={{ display: 'flex', flexDirection: 'column' }}>
+                <span className="telemetry-label">Route</span>
+                <div className="font-mono trail-char-box" style={{ 
+                  color: segmentStats.difficultyColor,
+                  padding: '4px 8px',
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: '4px',
+                  border: `1px solid ${segmentStats.difficultyColor}`,
+                  marginTop: '2px',
+                  display: 'inline-flex',
+                  flexDirection: 'column',
+                  width: 'max-content'
+                }}>
+                  <span className="trail-char-main" style={{ fontSize: '0.85rem', fontWeight: 700 }}>{segmentStats.diffMain}</span>
+                  {segmentStats.diffSub && <span className="trail-char-sub" style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '2px' }}>{segmentStats.diffSub}</span>}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Tengah: Grafik Elevasi & Dropdown POI */}
+        {!isProfileMinimized && (
+          <>
+            {/* Tengah: Grafik Elevasi & Dropdown POI */}
         <div className="elevation-profile-col" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div className="route-select-row" style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -731,6 +771,8 @@ function App() {
             {isSimulating ? <>Stop<br/>Simulation</> : <>Navigation<br/>Simulation</>}
           </div>
         </div>
+          </>
+        )}
 
       </div>
     </>

@@ -596,6 +596,7 @@ function App() {
               <Activity size={14} /> Segment Profile
             </div>
             <button 
+              className="minimize-btn-profile"
               style={{
                 background: 'rgba(34, 211, 238, 0.15)',
                 border: '1px solid var(--accent)',

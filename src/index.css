@@ -396,6 +396,16 @@ body {
   bottom: 80px !important;
 }
 
+/* Minimize Button Desktop Pos */
+@media (min-width: 769px) {
+  .minimize-btn-profile {
+    position: absolute !important;
+    top: 16px !important;
+    right: 24px !important;
+    z-index: 100;
+  }
+}
+
 /* Restyle MapLibre controls for dark mode to match HUD */
 .maplibregl-ctrl-group {
   background-color: var(--panel-bg) !important;
@@ -884,12 +894,12 @@ body {
   }
   
   .maplibregl-ctrl-bottom-right {
-    bottom: 365px !important;
+    bottom: 410px !important;
     right: 10px !important;
     z-index: 50 !important;
   }
   .maplibregl-ctrl-bottom-left {
-    bottom: 365px !important;
+    bottom: 410px !important;
     left: 10px !important;
     z-index: 50 !important;
   }

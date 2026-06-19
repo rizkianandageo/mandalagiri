@@ -23,7 +23,7 @@ const CustomTooltip = ({ active, payload }) => {
         <p style={{ margin: '0 0 4px 0', fontWeight: 700, color: '#10b981' }}>
           ⛰️ {d.elevation} MASL
         </p>
-        <p style={{ margin: 0, color: '#94a3b8' }}>Distance: {d.distance} km</p>
+        <p style={{ margin: 0, color: '#94a3b8' }}>Distance: {Number(d.distance).toFixed(2)} km</p>
       </div>
     );
   }

@@ -47,7 +47,7 @@ const ActivityBanner = ({ routeData, onClose }) => {
 
         <div className="activity-banner-content">
           {/* Main Grid: Similar to Image 4 */}
-                    {activeTab === 'stats' && (
+          {activeTab === 'stats' && (
             isMobile ? (
             <div className="stats-main-grid">
               <div className="stats-column">

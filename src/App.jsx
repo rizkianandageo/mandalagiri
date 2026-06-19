@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import MapComponent from './components/MapComponent';
 import ElevationProfile from './components/ElevationProfile';
 import LandingPage from './components/LandingPage';

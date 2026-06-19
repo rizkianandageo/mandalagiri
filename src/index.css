@@ -894,21 +894,21 @@ body {
   }
   
   .maplibregl-ctrl-bottom-right {
-    bottom: 410px !important;
+    bottom: 385px !important;
     right: 10px !important;
     z-index: 50 !important;
   }
   .maplibregl-ctrl-bottom-left {
-    bottom: 410px !important;
+    bottom: 385px !important;
     left: 10px !important;
     z-index: 50 !important;
   }
   
   .profile-minimized .maplibregl-ctrl-bottom-right {
-    bottom: 60px !important;
+    bottom: 75px !important;
   }
   .profile-minimized .maplibregl-ctrl-bottom-left {
-    bottom: 60px !important;
+    bottom: 75px !important;
   }
 
   .maplibregl-ctrl-attrib {

@@ -517,23 +517,23 @@ function App() {
             
             {!isActivitySummaryMinimized && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                <div className="activity-summary-row" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
                   <span className="telemetry-label">Distance</span>
                   <span className="font-mono text-accent" style={{ fontWeight: 'bold' }}>{importedRoute.stats.distance} <span style={{ fontSize: '0.7rem' }}>KM</span></span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                <div className="activity-summary-row" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
                   <span className="telemetry-label">Avg Heart Rate</span>
                   <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.avgHeartRate || '--'} <span style={{ fontSize: '0.7rem', color: '#f87171' }}>BPM</span></span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                <div className="activity-summary-row" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
                   <span className="telemetry-label">Max Heart Rate</span>
                   <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.maxHeartRate || '--'} <span style={{ fontSize: '0.7rem', color: '#f87171' }}>BPM</span></span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                <div className="activity-summary-row" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
                   <span className="telemetry-label">Calories</span>
                   <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.calories || '--'} <span style={{ fontSize: '0.7rem', color: '#fbbf24' }}>KCAL</span></span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div className="activity-summary-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span className="telemetry-label">Elevation Gain</span>
                   <span className="font-mono" style={{ fontWeight: 'bold' }}>{importedRoute.stats.elevationGain || '--'} <span style={{ fontSize: '0.7rem' }}>M</span></span>
                 </div>

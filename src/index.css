@@ -1183,6 +1183,20 @@ body {
     max-height: 100vh;
     border-radius: 0;
   }
+  .stats-main-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .activity-summary-row {
+    font-size: 0.75rem;
+  }
+  .activity-summary-row .telemetry-label {
+    font-size: 0.7rem;
+  }
+  .activity-summary-row .font-mono {
+    font-size: 0.8rem;
+    text-align: right;
+  }
 }
 
 .import-data-floating {
@@ -1191,25 +1205,29 @@ body {
   background: rgba(34, 211, 238, 0.1);
   border: 1px solid rgba(34, 211, 238, 0.5);
   color: var(--accent);
-  padding: 4px 10px;
+  padding: 8px 12px;
   border-radius: 20px;
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: bold;
   text-transform: uppercase;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   backdrop-filter: blur(4px);
-  bottom: 430px; /* same height as legend on mobile */
-  left: 140px; /* shifted right to be left of legend */
+  /* Mobile default: left of compass (compass is bottom-right ~40px wide) */
+  bottom: 380px; 
+  right: 55px; 
+  left: auto;
 }
 
 @media (min-width: 769px) {
   .import-data-floating {
     bottom: 280px; /* same height as legend on desktop */
-    right: max(240px, calc(50vw - 480px)); /* positioned left of the legend */
+    right: max(340px, calc(50vw - 380px)); /* positioned significantly left of the legend */
     left: auto;
+    padding: 10px 16px; /* matches legend panel height */
+    font-size: 0.8rem;
   }
 }

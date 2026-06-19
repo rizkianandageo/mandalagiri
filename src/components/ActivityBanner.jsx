@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Activity } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import '../index.css';
 
 const ActivityBanner = ({ routeData, onClose }) => {
@@ -216,15 +216,15 @@ const ActivityBanner = ({ routeData, onClose }) => {
                 <div className="chart-wrapper">
                   <div className="chart-title">Cadence</div>
                   <ResponsiveContainer width="100%" height={100}>
-                    <AreaChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                    <LineChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
                       <XAxis dataKey="time" hide />
                       <YAxis hide />
                       <Tooltip 
                         formatter={(value) => [`${Number(value).toLocaleString('en-US', {maximumFractionDigits: 0})} spm`, 'Cadence']}
                         contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} 
                       />
-                      <Area type="monotone" dataKey="cadence" stroke="#f97316" fill="#f97316" fillOpacity={0.5} />
-                    </AreaChart>
+                      <Line type="monotone" dataKey="cadence" stroke="none" dot={{ r: 1.5, fill: '#f97316', strokeWidth: 0 }} activeDot={{ r: 4, fill: '#f97316', strokeWidth: 0 }} isAnimationActive={false} connectNulls={false} />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>

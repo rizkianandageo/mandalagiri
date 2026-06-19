@@ -121,6 +121,48 @@ export const parseActivityFile = async (file) => {
               }
             }
 
+            const avgHeartRate = session.avg_heart_rate || (heartRates.length ? Math.round(heartRates.reduce((a, b) => a + b, 0) / heartRates.length) : null);
+            const maxHeartRate = session.max_heart_rate || (heartRates.length ? Math.max(...heartRates) : null);
+
+            const userProfile = (data.user_profiles && data.user_profiles.length > 0) ? data.user_profiles[0] : (data.user_profile && data.user_profile.length > 0 ? data.user_profile[0] : {});
+            const zonesTarget = (data.zones_targets && data.zones_targets.length > 0) ? data.zones_targets[0] : (data.zones_target && data.zones_target.length > 0 ? data.zones_target[0] : {});
+            
+            const maxHrLimit = zonesTarget.max_heart_rate || userProfile.max_heart_rate || 192;
+            const avgHrPct = avgHeartRate ? Math.round((avgHeartRate / maxHrLimit) * 100) : null;
+            const maxHrPct = maxHeartRate ? Math.round((maxHeartRate / maxHrLimit) * 100) : null;
+            
+            const timeInZoneMsg = (data.time_in_zones && data.time_in_zones.length > 0) 
+                ? (data.time_in_zones.find(t => t.reference_mesg === 18) || data.time_in_zones[data.time_in_zones.length - 1])
+                : (data.time_in_zone && data.time_in_zone.length > 0 ? (data.time_in_zone.find(t => t.reference_mesg === 18) || data.time_in_zone[data.time_in_zone.length - 1]) : null);
+            
+            const hrBoundaries = timeInZoneMsg?.hr_zone_high_boundary || [96, 115, 134, 154, 173, 192];
+            const getHrZone = (hr) => {
+               if (!hr) return null;
+               for (let i = 0; i < hrBoundaries.length; i++) {
+                 if (hr <= hrBoundaries[i]) {
+                    const lower = i === 0 ? 0 : hrBoundaries[i-1];
+                    const range = hrBoundaries[i] - lower;
+                    const pct = (hr - lower) / range;
+                    return (i + pct).toFixed(1);
+                 }
+               }
+               return '5.0';
+            };
+            const avgHrZone = getHrZone(avgHeartRate);
+            const maxHrZone = getHrZone(maxHeartRate);
+
+            let moderateIM = '--';
+            let vigorousIM = '--';
+            let totalIM = '--';
+            if (timeInZoneMsg && timeInZoneMsg.time_in_hr_zone) {
+              const z2 = timeInZoneMsg.time_in_hr_zone[1] || 0; // Moderate
+              const z3 = timeInZoneMsg.time_in_hr_zone[2] || 0; // Vigorous part 1
+              const z4 = timeInZoneMsg.time_in_hr_zone[3] || 0; // Vigorous part 2
+              moderateIM = Math.round(z2 / 60);
+              vigorousIM = Math.round((z3 + z4) / 60);
+              totalIM = moderateIM + (vigorousIM * 2);
+            }
+
             const stats = {
               distance: distanceNum ? distanceNum.toFixed(2) : '0.00',
               duration: durationSec, 
@@ -131,13 +173,25 @@ export const parseActivityFile = async (file) => {
               avgMovingPace: avgMovingPaceStr,
               bestPace: bestPaceStr,
               avgSpeed: session.enhanced_avg_speed ? session.enhanced_avg_speed.toFixed(1) : (session.avg_speed ? session.avg_speed.toFixed(1) : (distanceNum / (movingTimeSec / 3600)).toFixed(1)),
+              avgMovingSpeed: distanceNum > 0 && movingTimeSec > 0 ? (distanceNum / (movingTimeSec / 3600)).toFixed(1) : '--',
               maxSpeed: maxSpeedKph > 0 ? maxSpeedKph.toFixed(1) : null,
-              avgHeartRate: session.avg_heart_rate || (heartRates.length ? Math.round(heartRates.reduce((a, b) => a + b, 0) / heartRates.length) : null),
-              maxHeartRate: session.max_heart_rate || (heartRates.length ? Math.max(...heartRates) : null),
+              avgHeartRate: avgHeartRate,
+              maxHeartRate: maxHeartRate,
+              avgHrPct: avgHrPct,
+              maxHrPct: maxHrPct,
+              avgHrZone: avgHrZone,
+              maxHrZone: maxHrZone,
+              moderateIM: moderateIM,
+              vigorousIM: vigorousIM,
+              totalIM: totalIM,
               calories: session.total_calories || null,
+              caloriesConsumed: '--',
+              caloriesNet: session.total_calories ? `-${session.total_calories}` : '--',
               restingCalories: session.resting_calories || null,
               activeCalories: session.total_calories && session.resting_calories ? session.total_calories - session.resting_calories : null,
               estSweatLoss: session.est_sweat_loss || null,
+              fluidConsumed: '--',
+              fluidNet: session.est_sweat_loss ? `-${session.est_sweat_loss}` : '--',
               elevationGain: session.total_ascent != null ? Math.round(session.total_ascent * 1000) : null,
               totalDescent: session.total_descent != null ? Math.round(session.total_descent * 1000) : null,
               minElevation: session.min_altitude != null ? Math.round(session.min_altitude * 1000) : calcMinElev,

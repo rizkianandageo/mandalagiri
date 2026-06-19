@@ -44,14 +44,18 @@ const ActivityBanner = ({ routeData, onClose }) => {
               <StatBlock label="Resting Calories" value={stats.restingCalories || '--'} unit="" />
               <StatBlock label="Active Calories" value={stats.activeCalories || '--'} unit="" />
               <StatBlock label="Total Calories Burned" value={stats.calories || '--'} unit="" />
+              <StatBlock label="Calories Consumed" value={stats.caloriesConsumed} unit="" />
+              <StatBlock label="Calories Net" value={stats.caloriesNet} unit="" />
               <StatBlock label="Est. Sweat Loss" value={stats.estSweatLoss || '--'} unit="ml" />
+              <StatBlock label="Fluid Consumed" value={stats.fluidConsumed} unit="ml" />
+              <StatBlock label="Fluid Net" value={stats.fluidNet} unit="ml" />
             </div>
 
             {/* Heart Rate Column */}
             <div className="stats-column">
               <h3 className="column-title">Heart Rate</h3>
-              <StatBlock label="Avg HR" value={stats.avgHeartRate || '--'} unit="bpm" />
-              <StatBlock label="Max HR" value={stats.maxHeartRate || '--'} unit="bpm" />
+              <StatBlock label="Avg HR" value={stats.avgHeartRate || '--'} unit="bpm" subtext={stats.avgHrPct ? `${stats.avgHrPct}% Max • ${stats.avgHrZone} z` : null} />
+              <StatBlock label="Max HR" value={stats.maxHeartRate || '--'} unit="bpm" subtext={stats.maxHrPct ? `${stats.maxHrPct}% Max • ${stats.maxHrZone} z` : null} />
               
               <h3 className="column-title" style={{ marginTop: '24px' }}>Timing</h3>
               <StatBlock label="Time" value={stats.timerTimeStr || stats.elapsedTimeStr} unit="" />
@@ -68,18 +72,24 @@ const ActivityBanner = ({ routeData, onClose }) => {
               <StatBlock label="Max Elev" value={stats.maxElevation || '--'} unit="m" />
             </div>
 
-            {/* Cadence & Pace Column */}
+            {/* Cadence & Intensity Column */}
             <div className="stats-column">
               <h3 className="column-title">Cadence</h3>
               <StatBlock label="Avg Cadence" value={stats.avgCadence || '--'} unit="spm" />
               <StatBlock label="Max Cadence" value={stats.maxCadence || '--'} unit="spm" />
               <StatBlock label="Steps" value={stats.totalSteps || '--'} unit="" />
+
+              <h3 className="column-title" style={{ marginTop: '24px' }}>Intensity Minutes</h3>
+              <StatBlock label="Moderate" value={stats.moderateIM} unit="min" />
+              <StatBlock label="Vigorous" value={stats.vigorousIM} unit="min" />
+              <StatBlock label="Total" value={stats.totalIM} unit="min" />
               
               <h3 className="column-title" style={{ marginTop: '24px' }}>Pace/Speed</h3>
               <StatBlock label="Avg Pace" value={stats.avgPace} unit="" />
               <StatBlock label="Avg Moving Pace" value={stats.avgMovingPace} unit="" />
               <StatBlock label="Best Pace" value={stats.bestPace} unit="" />
               <StatBlock label="Avg Speed" value={stats.avgSpeed || '--'} unit="kph" />
+              <StatBlock label="Avg Moving Speed" value={stats.avgMovingSpeed} unit="kph" />
               <StatBlock label="Max Speed" value={stats.maxSpeed || '--'} unit="kph" />
             </div>
           </div>

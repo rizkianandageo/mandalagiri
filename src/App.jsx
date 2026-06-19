@@ -492,7 +492,7 @@ function App() {
         {/* Imported Route Stats */}
         {importedRoute && (
           <div className={`hud-panel ${isActivitySummaryMinimized ? 'minimized' : ''}`} style={{
-            position: 'static', width: '100%', padding: '16px', marginTop: '16px'
+            position: 'static', width: '100%', padding: '16px'
           }}>
             <div className="hud-panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isActivitySummaryMinimized ? '0' : '16px' }}>
               <div 

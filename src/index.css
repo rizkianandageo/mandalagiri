@@ -1188,13 +1188,13 @@ body {
     gap: 16px;
   }
   .activity-summary-row {
-    font-size: 0.75rem;
-  }
-  .activity-summary-row .telemetry-label {
     font-size: 0.7rem;
   }
+  .activity-summary-row .telemetry-label {
+    font-size: 0.65rem;
+  }
   .activity-summary-row .font-mono {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     text-align: right;
   }
 }
@@ -1217,17 +1217,26 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   backdrop-filter: blur(4px);
   /* Mobile default: left of compass (compass is bottom-right ~40px wide) */
-  bottom: 380px; 
+  bottom: 385px; 
   right: 55px; 
   left: auto;
+  transition: bottom 0.3s ease-in-out, right 0.3s ease;
+}
+
+.profile-minimized .import-data-floating {
+  bottom: 90px !important;
 }
 
 @media (min-width: 769px) {
   .import-data-floating {
     bottom: 280px; /* same height as legend on desktop */
-    right: max(340px, calc(50vw - 380px)); /* positioned significantly left of the legend */
+    right: max(270px, calc(50vw - 454px)); /* tightened gap to legend panel */
     left: auto;
     padding: 10px 16px; /* matches legend panel height */
     font-size: 0.8rem;
+  }
+  
+  .profile-minimized .import-data-floating {
+    bottom: 80px !important;
   }
 }

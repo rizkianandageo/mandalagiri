@@ -103,6 +103,14 @@ function App() {
       document.body.classList.remove('profile-minimized');
     }
   }, [isProfileMinimized]);
+
+  useEffect(() => {
+    if (importedRoute) {
+      document.body.classList.add('is-imported-route');
+    } else {
+      document.body.classList.remove('is-imported-route');
+    }
+  }, [importedRoute]);
   
   const [segmentStats, setSegmentStats] = useState({
     jarakTempuh: "0.0",

@@ -1398,3 +1398,21 @@ body {
   }
 }
 
+
+
+/* Penyesuaian Offset Bottom pada Mobile saat Mode Import Data Aktif (Kompensasi Tinggi Header Card Profile) */
+@media (max-width: 768px) {
+  body.is-imported-route:not(.profile-minimized) .maplibregl-ctrl-bottom-right,
+  body.is-imported-route:not(.profile-minimized) .maplibregl-ctrl-bottom-left {
+    bottom: 310px !important;
+  }
+  
+  body.is-imported-route:not(.profile-minimized) .import-data-floating {
+    bottom: 320px !important;
+  }
+  
+  body.is-imported-route:not(.profile-minimized) .layer-legend-panel {
+    bottom: 355px !important;
+  }
+}
+

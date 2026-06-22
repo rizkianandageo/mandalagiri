@@ -141,7 +141,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
       map.current.addSource(sourceId, {
         type: 'geojson',
         data: displayGeojson,
-        tolerance: 1.5 // maplibre internal simplification
+        tolerance: 0 // Matikan simplifikasi internal
       });
 
       map.current.addLayer({
@@ -271,11 +271,13 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
           },
           'jalur': {
             type: 'geojson',
-            data: import.meta.env.BASE_URL + 'data/jalur.geojson'
+            data: import.meta.env.BASE_URL + 'data/jalur.geojson',
+            tolerance: 0
           },
           'poi': {
             type: 'geojson',
-            data: import.meta.env.BASE_URL + 'data/poi.geojson'
+            data: import.meta.env.BASE_URL + 'data/poi.geojson',
+            tolerance: 0
           },
           'hover-source': {
             type: 'geojson',
@@ -525,7 +527,8 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
           // Inisialisasi empty source, akan diisi oleh useEffect
           map.current.addSource('jalur-slope-source', {
             type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
+            data: { type: 'FeatureCollection', features: [] },
+            tolerance: 0
           });
 
           // Layer Glow Warna Warni

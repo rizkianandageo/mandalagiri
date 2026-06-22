@@ -903,41 +903,49 @@ function App() {
             {/* Tengah: Grafik Elevasi & Dropdown POI */}
         <div className="elevation-profile-col" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div className="route-select-row" style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="telemetry-label" style={{ margin: 0 }}>Start:</span>
-              <select 
-                value={startPoi?.index ?? ''}
-                onChange={(e) => {
-                  const idx = parseInt(e.target.value);
-                  const poi = poiList.find(p => p.index === idx);
-                  if (poi) setStartPoi(poi);
-                }}
-                className="font-mono"
-                style={{ background: 'rgba(15,23,42,0.8)', color: '#fff', border: '1px solid var(--accent)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', outline: 'none', cursor: 'pointer' }}
-              >
-                {poiList.map((poi, i) => (
-                  <option key={i} value={poi.index} disabled={endPoi && poi.index >= endPoi.index}>{poi.name}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="telemetry-label" style={{ margin: 0 }}>Destination:</span>
-              <select 
-                value={endPoi?.index ?? ''}
-                onChange={(e) => {
-                  const idx = parseInt(e.target.value);
-                  const poi = poiList.find(p => p.index === idx);
-                  if (poi) setEndPoi(poi);
-                }}
-                className="font-mono"
-                style={{ background: 'rgba(15,23,42,0.8)', color: '#fff', border: '1px solid var(--accent)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', outline: 'none', cursor: 'pointer' }}
-              >
-                {poiList.map((poi, i) => (
-                  <option key={i} value={poi.index} disabled={startPoi && poi.index <= startPoi.index}>{poi.name}</option>
-                ))}
-              </select>
-            </div>
+            {importedRoute ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="telemetry-label" style={{ margin: 0, color: 'var(--accent)', fontSize: '0.9rem', fontWeight: 'bold' }}>GPS Tracking Result</span>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="telemetry-label" style={{ margin: 0 }}>Start:</span>
+                  <select 
+                    value={startPoi?.index ?? ''}
+                    onChange={(e) => {
+                      const idx = parseInt(e.target.value);
+                      const poi = poiList.find(p => p.index === idx);
+                      if (poi) setStartPoi(poi);
+                    }}
+                    className="font-mono"
+                    style={{ background: 'rgba(15,23,42,0.8)', color: '#fff', border: '1px solid var(--accent)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', outline: 'none', cursor: 'pointer' }}
+                  >
+                    {poiList.map((poi, i) => (
+                      <option key={i} value={poi.index} disabled={endPoi && poi.index >= endPoi.index}>{poi.name}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="telemetry-label" style={{ margin: 0 }}>Destination:</span>
+                  <select 
+                    value={endPoi?.index ?? ''}
+                    onChange={(e) => {
+                      const idx = parseInt(e.target.value);
+                      const poi = poiList.find(p => p.index === idx);
+                      if (poi) setEndPoi(poi);
+                    }}
+                    className="font-mono"
+                    style={{ background: 'rgba(15,23,42,0.8)', color: '#fff', border: '1px solid var(--accent)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', outline: 'none', cursor: 'pointer' }}
+                  >
+                    {poiList.map((poi, i) => (
+                      <option key={i} value={poi.index} disabled={startPoi && poi.index <= startPoi.index}>{poi.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
           </div>
           
           <div style={{ flex: 1, position: 'relative' }}>

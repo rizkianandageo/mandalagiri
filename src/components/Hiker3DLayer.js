@@ -84,10 +84,11 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             let elevation = 0;
             if (this.map.queryTerrainElevation) {
                 const terrainElev = this.map.queryTerrainElevation(lngLat) || 0;
-                // Model GLB umumnya memiliki pivot/origin di tengah badan (bukan di kaki),
-                // sehingga perlu offset = setengah tinggi model agar kaki tepat di atas terrain.
-                // modelSizeMeters = 200m → half = 100m, tambah buffer 20m → offset = 120m
-                const elevationOffset = 120; // meter di atas terrain
+                // Model GLB ini memiliki kaki di +Y dan kepala di -Y (non-standard Y-up).
+                // Setelah RotationX(-PI/2), kaki (+Y GLTF) → -Z MapLibre (ke bawah/terrain).
+                // Origin model diasumsikan di tengah → kaki sejauh 100m di bawah origin.
+                // Offset = setengah tinggi model (100m) agar kaki tepat di permukaan terrain.
+                const elevationOffset = 100; // meter
                 elevation = terrainElev + elevationOffset;
             }
 
@@ -126,11 +127,10 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             const m = new THREE.Matrix4().fromArray(mvpArray);
 
             // Model Transform Matrix (L): posisi, skala, rotasi
-            // Perhatian: MapLibre menggunakan koordinat tangan-kiri (Y ke bawah di layar),
-            // sedangkan Three.js tangan-kanan (Y ke atas). Untuk GLTF, kita rotasi sumbu X 90°
-            // agar model berdiri tegak (GLTF: Y-up → MapLibre: Z-up).
-            // TIDAK menggunakan -scale Y karena akan menyebabkan winding order terbalik.
-            const rotationX = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+            // Model GLTF ini non-standard: kaki berada di +Y, kepala di -Y.
+            // RotationX(-PI/2) memetakan GLTF +Y → MapLibre -Z (bawah/terrain) sehingga kaki ke bawah.
+            // RotationX(+PI/2) justru memetakan kaki ke +Z (atas/langit) → model terbalik.
+            const rotationX = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
             const rotationZ = new THREE.Matrix4().makeRotationZ((bearing) * Math.PI / 180);
 
             const l = new THREE.Matrix4()

@@ -739,27 +739,13 @@ function App() {
           <Watch size={14} /> Import Data
         </button>
       ) : (
-        <div className="import-data-floating" style={{ padding: 0, overflow: 'hidden' }}>
-          <button 
-              onClick={() => !isSimulating && fileInputRef.current && fileInputRef.current.click()}
-              style={{ 
-                background: 'transparent', border: 'none', color: 'inherit', padding: '8px 12px', 
-                cursor: isSimulating ? 'not-allowed' : 'pointer', 
-                display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'inherit', fontWeight: 'inherit', textTransform: 'inherit',
-                opacity: isSimulating ? 0.3 : 1
-              }}
-              title="Change Data"
-              disabled={isSimulating}
-            >
-              <Watch size={14} /> Change
-            </button>
-            <div style={{ width: '1px', background: 'rgba(34, 211, 238, 0.3)', height: '16px' }}></div>
+        <div className="import-data-floating imported-actions">
             <button 
               onClick={() => !isSimulating && photoInputRef.current && photoInputRef.current.click()}
+              className="imported-action-btn"
               style={{ 
-                background: 'transparent', border: 'none', color: '#6ee7b7', padding: '8px 12px', 
+                color: '#6ee7b7', 
                 cursor: isSimulating ? 'not-allowed' : 'pointer', 
-                display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'inherit', fontWeight: 'inherit', textTransform: 'inherit',
                 opacity: isSimulating ? 0.3 : 1
               }}
               title="Add Photos"
@@ -767,21 +753,37 @@ function App() {
             >
               <ImagePlus size={14} /> Add Photos ({importedPhotos.length})
             </button>
-            <div style={{ width: '1px', background: 'rgba(34, 211, 238, 0.3)', height: '16px' }}></div>
-            <button 
-              onClick={() => { if(!isSimulating) { setImportedRoute(null); setImportedPhotos([]); setShowActivityBanner(false); } }}
-              style={{ 
-                background: 'transparent', border: 'none', color: '#fca5a5', padding: '8px 12px', 
-                cursor: isSimulating ? 'not-allowed' : 'pointer', 
-                display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'inherit', fontWeight: 'inherit', textTransform: 'inherit',
-                opacity: isSimulating ? 0.3 : 1
-              }}
-              title="Remove Data"
-              disabled={isSimulating}
-            >    
-            <Trash2 size={14} /> Remove
-          </button>
-        </div>
+            <div className="imported-actions-divider-h"></div>
+            <div className="imported-actions-row">
+              <button 
+                  onClick={() => !isSimulating && fileInputRef.current && fileInputRef.current.click()}
+                  className="imported-action-btn"
+                  style={{ 
+                    color: 'inherit', 
+                    cursor: isSimulating ? 'not-allowed' : 'pointer', 
+                    opacity: isSimulating ? 0.3 : 1
+                  }}
+                  title="Change Data"
+                  disabled={isSimulating}
+                >
+                  <Watch size={14} /> Change
+              </button>
+              <div className="imported-actions-divider-v"></div>
+              <button 
+                onClick={() => { if(!isSimulating) { setImportedRoute(null); setImportedPhotos([]); setShowActivityBanner(false); } }}
+                className="imported-action-btn"
+                style={{ 
+                  color: '#fca5a5', 
+                  cursor: isSimulating ? 'not-allowed' : 'pointer', 
+                  opacity: isSimulating ? 0.3 : 1
+                }}
+                title="Remove Data"
+                disabled={isSimulating}
+              >
+                <Trash2 size={14} /> Remove
+              </button>
+            </div>
+          </div>
       )}
 
       {/* Layer Legend / Switcher */}

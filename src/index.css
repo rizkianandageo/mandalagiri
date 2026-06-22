@@ -1241,6 +1241,60 @@ body {
   }
 }
 
+/* Imported Actions Layout */
+.import-data-floating.imported-actions {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  align-items: stretch;
+}
+.imported-actions-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+.imported-action-btn {
+  background: transparent;
+  border: none;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: inherit;
+  font-weight: inherit;
+  text-transform: inherit;
+  width: 100%;
+}
+.imported-actions-divider-h {
+  width: 100%;
+  height: 1px;
+  background: rgba(34, 211, 238, 0.3);
+}
+.imported-actions-divider-v {
+  width: 1px;
+  height: 16px;
+  background: rgba(34, 211, 238, 0.3);
+}
+
+@media (min-width: 769px) {
+  .import-data-floating.imported-actions {
+    flex-direction: row;
+    border-radius: 20px;
+  }
+  .imported-actions-divider-h {
+    width: 1px;
+    height: 16px;
+  }
+  .imported-action-btn {
+    padding: 8px 12px;
+  }
+}
+
 /* Banner Tabs - Eye Catching Design */
 .banner-tabs {
   display: flex;

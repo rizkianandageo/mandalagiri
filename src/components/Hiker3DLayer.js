@@ -26,7 +26,7 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             
             this.mixer = null;
             this.model = null;
-            this.clock = new THREE.Clock();
+            this.lastTime = performance.now();
             
             // Load Model GLB
             const loader = new GLTFLoader();
@@ -64,13 +64,23 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
 
             const bearing = window.mapConsole.hiker3DRotation || 0; 
             
-            // Konversi ke koordinat MapLibre (Mercator)
-            const mercatorOrigin = maplibregl.MercatorCoordinate.fromLngLat(lngLat, 0);
+            // Konversi ke koordinat MapLibre (Mercator) dengan dukungan elevasi terrain
+            let elevation = 0;
+            if (this.map.queryTerrainElevation) {
+                // Tambahkan sedikit offset misal +5 meter agar kaki tidak terpotong kontur
+                elevation = (this.map.queryTerrainElevation(lngLat) || 0) + 5; 
+            }
+            const mercatorOrigin = maplibregl.MercatorCoordinate.fromLngLat(lngLat, elevation);
             
             // Hitung skala berdasarkan meter riil agar ukurannya konsisten
-            // Model mungkin perlu diskalakan agar proporsional secara visual (misal setara 50-100 meter di peta agar terlihat jelas dari atas)
+            // Perbesar ukuran model agar terlihat jelas dari atas (misal 500 meter)
             const meterScale = mercatorOrigin.meterInMercatorCoordinateUnits();
-            const visualSize = 150; // Tinggi model dalam meter
+            
+            // Dinamiskan scale berdasarkan zoom level agar tetap terlihat saat zoom out
+            const currentZoom = this.map.getZoom();
+            const zoomScaleFactor = Math.pow(2, 14 - currentZoom); // 1 di zoom 14, membesar saat dizoom out
+            const visualSize = 1500 * Math.max(1, zoomScaleFactor); // Ukuran base 1500m di zoom <=14
+            
             const scale = meterScale * visualSize;
 
             const m = new THREE.Matrix4().fromArray(matrix);
@@ -87,9 +97,13 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
                 
             this.camera.projectionMatrix = m.multiply(l);
             
-            // Update animasi
+            // Update animasi tanpa THREE.Clock
             if (this.mixer) {
-                const delta = this.clock.getDelta();
+                const now = performance.now();
+                if (!this.lastTime) this.lastTime = now;
+                let delta = (now - this.lastTime) / 1000;
+                if (delta > 0.1) delta = 0.1; // clamp delta
+                this.lastTime = now;
                 this.mixer.update(delta);
             }
             

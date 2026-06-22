@@ -319,9 +319,13 @@ function App() {
   const toggleSimulation = () => {
     if(!isSimulating) {
       if(window.mapConsole && window.mapConsole.startFlyThrough) {
-        const s = startPoi ? startPoi.index : 0;
-        const e = endPoi ? endPoi.index : profileData.length - 1;
-        window.mapConsole.startFlyThrough(s, e);
+        if (importedRoute && window.mapConsole.importedSimulationData) {
+          window.mapConsole.startFlyThrough(0, null);
+        } else {
+          const s = startPoi ? startPoi.index : 0;
+          const e = endPoi ? endPoi.index : profileData.length - 1;
+          window.mapConsole.startFlyThrough(s, e);
+        }
         setIsSimulating(true);
       }
     } else {

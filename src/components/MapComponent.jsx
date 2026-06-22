@@ -41,7 +41,13 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
     const layerGlowId = 'imported-route-glow';
     const layerLineId = 'imported-route-line';
 
+    // Hentikan simulasi apapun jika rute berubah/dihapus
+    if (window.mapConsole && window.mapConsole.stopFlyThrough) {
+      window.mapConsole.stopFlyThrough();
+    }
+
     if (!importedRoute) {
+      if (window.mapConsole) window.mapConsole.importedSimulationData = null;
       if (map.current.getLayer(layerGlowId)) map.current.removeLayer(layerGlowId);
       if (map.current.getLayer(layerLineId)) map.current.removeLayer(layerLineId);
       if (map.current.getSource(sourceId)) map.current.removeSource(sourceId);
@@ -54,6 +60,28 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
       displayGeojson = turf.simplify(importedRoute.geojson, { tolerance: 0.00005, highQuality: false, mutate: false });
     } catch (err) {
       console.warn('Failed to simplify route:', err);
+    }
+
+    // Generate simulasi navigasi dari rute resolusi penuh (agar mulus)
+    if (window.mapConsole && importedRoute.geojson && importedRoute.geojson.features.length > 0) {
+      const coords = importedRoute.geojson.features[0].geometry.coordinates;
+      let totalDist = 0;
+      let cumTime = 0;
+      window.mapConsole.importedSimulationData = coords.map((c, idx) => {
+        if (idx > 0) {
+           const pt1 = turf.point(coords[idx-1]);
+           const pt2 = turf.point(c);
+           totalDist += turf.distance(pt1, pt2, {units: 'kilometers'});
+           cumTime = totalDist * 720; // Aproksimasi waktu: 12 menit per km
+        }
+        return {
+          lng: c[0],
+          lat: c[1],
+          elevation: c[2] || 0,
+          distance: totalDist,
+          cumulative_time: cumTime
+        };
+      });
     }
 
     if (map.current.getSource(sourceId)) {
@@ -465,7 +493,10 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
           let isFlying = false;
           let hikerMarker = null;
 
-          window.mapConsole.startFlyThrough = (startIdx = 0, endIdx = data.length - 1) => {
+          window.mapConsole.startFlyThrough = (startIdx = 0, endIdx = null) => {
+            const activeData = window.mapConsole.importedSimulationData || data;
+            if (endIdx === null) endIdx = activeData.length - 1;
+
             if (isFlying) {
               window.mapConsole.stopFlyThrough();
               return;
@@ -474,7 +505,8 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             isFlying = true;
             let i = startIdx;
             let lastTime = 0;
-            const speed = 25; // ms per langkah
+            // Kecepatan adaptif: Rute impor butuh interval sedikit lebih besar (40ms) untuk menutupi gap poin
+            const speed = window.mapConsole.importedSimulationData ? 40 : 25; 
 
             // Buat elemen kustom untuk marker pendaki
             const el = document.createElement('div');
@@ -492,7 +524,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             el.innerHTML = '🚶';
 
             hikerMarker = new maplibregl.Marker({ element: el })
-              .setLngLat([data[startIdx].lng, data[startIdx].lat])
+              .setLngLat([activeData[startIdx].lng, activeData[startIdx].lat])
               .addTo(map.current);
 
             let currentBearing = map.current.getBearing();
@@ -505,8 +537,8 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
               }
 
               if (time - lastTime > speed) {
-                const pt = data[i];
-                const startPt = data[startIdx];
+                const pt = activeData[i];
+                const startPt = activeData[startIdx];
                 const offsetPt = {
                   ...pt,
                   originalDistance: pt.distance,
@@ -517,8 +549,8 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                 hikerMarker.setLngLat([pt.lng, pt.lat]);
 
                 let targetBearing = currentBearing;
-                const lookAheadIndex = Math.min(i + 20, data.length - 1);
-                const nextPt = data[lookAheadIndex];
+                const lookAheadIndex = Math.min(i + 20, activeData.length - 1);
+                const nextPt = activeData[lookAheadIndex];
                 
                 if (nextPt) {
                   const pt1 = turf.point([pt.lng, pt.lat]);
@@ -530,11 +562,13 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                 diff = ((diff + 180) % 360) - 180;
                 currentBearing += diff * 0.1;
 
-                map.current.jumpTo({
+                map.current.easeTo({
                   center: [pt.lng, pt.lat],
                   bearing: currentBearing,
                   pitch: 75,
                   zoom: 15.8,
+                  duration: speed, // Ease smoothly ke titik berikutnya layaknya efek sinematik Relive
+                  easing: (t) => t, // Linear pacing
                   padding: { bottom: 250 }
                 });
 

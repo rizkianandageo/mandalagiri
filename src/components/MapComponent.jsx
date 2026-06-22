@@ -607,11 +607,19 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
 
             // Mulai simulasi setelah terbang selesai & tile dimuat
             flyTimeoutId = setTimeout(() => {
-              // Target durasi disamakan: 15 detik (normal) untuk default, dan 5 detik (super timelapse) untuk impor
-              const targetDurationMs = isImported ? 5000 : 15000;
-              // Anggap 60fps (~16ms per frame)
-              const totalFrames = targetDurationMs / 16;
-              const stepSize = Math.max(0.1, activeData.length / totalFrames);
+              // Hitung jarak rute yang disimulasikan agar kecepatan konstan berapapun jaraknya
+              const startDist = activeData[startIdx]?.distance || 0;
+              const endDist = activeData[endIdx]?.distance || activeData[activeData.length - 1].distance;
+              const totalDistance = Math.abs(endDist - startDist);
+              
+              // Kecepatan referensi dari rute asli Mandalagiri (17.12 km dalam 15 detik)
+              // Dengan rasio ini, semua simulasi navigasi dan data import akan berjalan pada tempo visual yang sama persis
+              const referenceSpeedKmPerMs = 17.12 / 15000;
+              let targetDurationMs = totalDistance / referenceSpeedKmPerMs;
+              if (targetDurationMs < 3000) targetDurationMs = 3000; // Minimal 3 detik agar tidak terlalu instan
+              
+              // Frame-rate independent: Poin yang dilewati per ms
+              const pointsPerMs = (endIdx - startIdx) / targetDurationMs;
 
               // Buat elemen kustom untuk marker pendaki
               const el = document.createElement('div');
@@ -636,12 +644,16 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
               let lastTickTime = 0;
               let pausedUntil = 0;
               const shownItems = new Set();
+              let lastAnimTime = null;
 
               const animate = (time) => {
                 if (!isFlying) return;
                 
+                if (lastAnimTime === null) lastAnimTime = time;
+                
                 // Jeda animasi saat popup foto/checkpoint muncul
                 if (time < pausedUntil) {
+                  lastAnimTime = time; // Pastikan waktu terus jalan agar tidak melompat setelah pause
                   flyAnimationId = requestAnimationFrame(animate);
                   return;
                 }
@@ -651,9 +663,21 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   return;
                 }
 
-                // Update konstan 60fps (tiap ~16ms)
-                if (time - lastTime >= 16) {
+                // Hitung delta time asli (Frame-Rate Independent untuk 60Hz / 120Hz / 144Hz)
+                const dt = time - lastAnimTime;
+                lastAnimTime = time;
+                
+                // Batasi dt max 100ms agar saat tab background/lag tidak melompat jauh
+                const safeDt = Math.min(dt, 100);
+
+                if (safeDt > 0) {
+                  i += pointsPerMs * safeDt;
+                  
                   const currentIndex = Math.floor(i);
+                  if (currentIndex >= activeData.length - 1) {
+                    window.mapConsole.stopFlyThrough();
+                    return;
+                  }
                   const nextIndex = Math.min(currentIndex + 1, activeData.length - 1);
                   const frac = i - currentIndex;
                   
@@ -704,7 +728,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   });
 
                   // Cek POI terdekat (hanya untuk simulasi navigasi rute asli)
-                  if (!isImported) {
+                  if (!window.mapConsole.importedSimulationData) {
                     const currentPoiList = poiListRef.current;
                     if (currentPoiList && currentPoiList.length > 0) {
                       const currentTurfPt = turf.point([offsetPt.lng, offsetPt.lat]);
@@ -772,9 +796,6 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     }));
                     lastTickTime = time;
                   }
-                  
-                  i += stepSize;
-                  lastTime = time;
                 }
                 flyAnimationId = requestAnimationFrame(animate);
               };

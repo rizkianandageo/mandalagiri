@@ -462,7 +462,7 @@ function App() {
               type="file" 
               ref={fileInputRef} 
               style={{ display: 'none' }} 
-              accept=".gpx,.fit,.tcx"
+              accept=".gpx,.fit,.tcx,*/*"
               onChange={handleFileUpload}
             />
             <input 

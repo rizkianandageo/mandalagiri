@@ -737,12 +737,11 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                       }
                     }
                     
-                    // VERTICAL PADDING DI-DISABLE: 
-                    // Render engine MapLibre GL 3D (pitch: 45) secara alami mendorong elevasi visual ke atas layar.
-                    // Menambahkan padding bottom akan menggeser pusat rotasi ke atas, sehingga icon pendaki akan 
-                    // menabrak batas atas layar. Karena user lebih menyukai rasio center vertikal murni (seperti saat flyTo awal),
-                    // kita set padding atas dan bawah ke 0 agar elevasi 3D terpusat secara natural.
-                    dynPadding.top = 0;
+                    // VERTICAL OFFSET KOREKSI 3D:
+                    // Karena rendering 3D selalu mendorong puncak terrain ke atas, kita beri sedikit 
+                    // padding.top buatan untuk memaksa "center point" kamera turun sedikit ke bawah.
+                    // Ini akan membuat icon pendaki turun dari bagian atas layar ke bagian tengah optikal.
+                    dynPadding.top = window.innerHeight * 0.2;
                     dynPadding.bottom = 0;
                     
                   } catch (e) {

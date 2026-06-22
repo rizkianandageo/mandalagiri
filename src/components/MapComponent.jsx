@@ -718,13 +718,44 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   // Smoothing rotasi kamera
                   currentBearing += diff * 0.05;
 
+                  // Hitung padding dinamis berdasarkan panel UI yang terbuka agar icon pendaki tetap di tengah layar yang terlihat
+                  let dynPadding = { top: 0, bottom: 0, left: 0, right: 0 };
+                  try {
+                    const isMobile = window.innerWidth <= 768;
+                    const bottomPanel = document.querySelector('.hud-bottom');
+                    if (bottomPanel) {
+                      const rect = bottomPanel.getBoundingClientRect();
+                      // Ambil tinggi panel bawah yang terekspos di viewport
+                      dynPadding.bottom = Math.max(0, window.innerHeight - rect.top);
+                    }
+                    
+                    if (isMobile) {
+                      const topBar = document.querySelector('.hud-topbar');
+                      if (topBar) dynPadding.top = topBar.offsetHeight;
+                    } else {
+                      const leftPanel = document.querySelector('.hud-left-container');
+                      if (leftPanel) {
+                        const rect = leftPanel.getBoundingClientRect();
+                        dynPadding.left = Math.max(0, rect.right);
+                      }
+                      const rightPanel = document.querySelector('.hud-right-container');
+                      if (rightPanel) {
+                        const rect = rightPanel.getBoundingClientRect();
+                        dynPadding.right = Math.max(0, window.innerWidth - rect.left);
+                      }
+                    }
+                  } catch (e) {
+                    // Abaikan jika error saat query DOM
+                  }
+
                   // Gunakan jumpTo pada 60fps dengan pitch dan zoom yang jauh lebih aman (Drone View Tinggi)
                   // Ini mencegah kamera menabrak (clipping) gunung 3D yang menyebabkan map/icon/popup hilang.
                   map.current.jumpTo({
                     center: [interpLng, interpLat],
                     bearing: currentBearing,
                     pitch: 45,
-                    zoom: 13.2
+                    zoom: 13.2,
+                    padding: dynPadding
                   });
 
                   // Cek POI terdekat (hanya untuk simulasi navigasi rute asli)

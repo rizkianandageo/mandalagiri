@@ -618,7 +618,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             el.style.boxShadow = '0 0 15px rgba(34, 211, 238, 0.6)';
             el.innerHTML = '🚶';
 
-            hikerMarker = new maplibregl.Marker({ element: el, pitchAlignment: 'map' })
+            hikerMarker = new maplibregl.Marker({ element: el })
               .setLngLat([activeData[startIdx].lng, activeData[startIdx].lat])
               .addTo(map.current);
 

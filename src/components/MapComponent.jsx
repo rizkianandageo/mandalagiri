@@ -618,7 +618,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             el.style.boxShadow = '0 0 15px rgba(34, 211, 238, 0.6)';
             el.innerHTML = '🚶';
 
-            hikerMarker = new maplibregl.Marker({ element: el })
+            hikerMarker = new maplibregl.Marker({ element: el, pitchAlignment: 'map' })
               .setLngLat([activeData[startIdx].lng, activeData[startIdx].lat])
               .addTo(map.current);
 
@@ -669,8 +669,8 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                 hikerMarker.setLngLat([interpLng, interpLat]);
 
                 let targetBearing = currentBearing;
-                // Look-ahead lebih jauh agar kamera tidak gampang oleng
-                const lookAheadIndex = Math.min(currentIndex + 30, activeData.length - 1);
+                // Look-ahead menengah agar tidak terlalu lambat atau terlalu responsif
+                const lookAheadIndex = Math.min(currentIndex + 15, activeData.length - 1);
                 const nextPt = activeData[lookAheadIndex];
                 
                 if (nextPt) {
@@ -681,15 +681,16 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
 
                 let diff = targetBearing - currentBearing;
                 diff = ((diff + 180) % 360) - 180;
-                // Rotasi kamera sangat lambat & smooth (Cinematic drone)
-                currentBearing += diff * 0.02;
+                // Smoothing rotasi kamera
+                currentBearing += diff * 0.05;
 
-                // Gunakan jumpTo pada 60fps
+                // Gunakan jumpTo pada 60fps dengan pitch dan zoom yang jauh lebih aman (Drone View Tinggi)
+                // Ini mencegah kamera menabrak (clipping) gunung 3D yang menyebabkan map/icon/popup hilang.
                 map.current.jumpTo({
                   center: [interpLng, interpLat],
                   bearing: currentBearing,
-                  pitch: 60,
-                  zoom: 14.5
+                  pitch: 45,
+                  zoom: 13.2
                 });
 
                 // Cek POI terdekat (hanya untuk simulasi navigasi rute asli)

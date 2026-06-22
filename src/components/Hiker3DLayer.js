@@ -140,10 +140,26 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
                 this.mixer.update(delta);
             }
             
+            // THREE.js secara default merender ke 'null' (default framebuffer layar). 
+            // Namun jika MapLibre mengaktifkan 3D Terrain, ia menggunakan Framebuffer internal (FBO).
+            // Kita harus memaksa THREE.js untuk merender ke FBO milik MapLibre dengan mencegat fungsi bindFramebuffer.
+            const currentFBO = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+            const originalBindFramebuffer = gl.bindFramebuffer;
+            gl.bindFramebuffer = function (target, fbo) {
+                if (fbo === null) {
+                    originalBindFramebuffer.call(this, target, currentFBO);
+                } else {
+                    originalBindFramebuffer.call(this, target, fbo);
+                }
+            };
+
             // Pastikan THREE tidak menghapus canvas dari MapLibre
             this.renderer.autoClear = false;
             this.renderer.resetState();
             this.renderer.render(this.scene, this.camera);
+            
+            // Kembalikan fungsi asli setelah THREE selesai merender
+            gl.bindFramebuffer = originalBindFramebuffer;
             
             // Terus render ulang untuk animasi mulus (framerate maksimum)
             if (window.mapConsole.isFlying) {

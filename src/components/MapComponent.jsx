@@ -17,7 +17,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
   // Efek untuk menyembunyikan/menampilkan layer jalur
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
-    const trailLayers = ['jalur-slope-line', 'jalur-slope-glow', 'imported-route-line', 'imported-route-glow'];
+    const trailLayers = ['jalur-slope-line', 'jalur-slope-glow'];
     trailLayers.forEach(layer => {
       if (map.current.getLayer(layer)) {
         map.current.setLayoutProperty(layer, 'visibility', showTrailLayer ? 'visible' : 'none');
@@ -523,8 +523,8 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             let lastTime = 0;
             const isImported = !!window.mapConsole.importedSimulationData;
             
-            // Target durasi disamakan persis sekitar ~5 detik untuk rute mana pun (efek simulasi instan)
-            const targetDurationMs = 5000;
+            // Target durasi disamakan: 15 detik (normal) untuk default, dan 5 detik (super timelapse) untuk impor
+            const targetDurationMs = isImported ? 5000 : 15000;
             // Anggap 60fps (~16ms per frame)
             const totalFrames = targetDurationMs / 16;
             const stepSize = Math.max(0.1, activeData.length / totalFrames);

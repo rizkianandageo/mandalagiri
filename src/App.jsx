@@ -685,18 +685,30 @@ function App() {
       ) : (
         <div className="import-data-floating" style={{ padding: 0, overflow: 'hidden' }}>
           <button 
-            onClick={() => fileInputRef.current && fileInputRef.current.click()}
-            style={{ background: 'transparent', border: 'none', color: 'inherit', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'inherit', fontWeight: 'inherit', textTransform: 'inherit' }}
-            title="Change Data"
-          >
-            <Watch size={14} /> Change
-          </button>
-          <div style={{ width: '1px', background: 'rgba(34, 211, 238, 0.3)', height: '16px' }}></div>
-          <button 
-            onClick={() => { setImportedRoute(null); setShowActivityBanner(false); }}
-            style={{ background: 'transparent', border: 'none', color: '#fca5a5', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'inherit', fontWeight: 'inherit', textTransform: 'inherit' }}
-            title="Remove Data"
-          >
+              onClick={() => !isSimulating && fileInputRef.current && fileInputRef.current.click()}
+              style={{ 
+                background: 'transparent', border: 'none', color: 'inherit', padding: '8px 12px', 
+                cursor: isSimulating ? 'not-allowed' : 'pointer', 
+                display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'inherit', fontWeight: 'inherit', textTransform: 'inherit',
+                opacity: isSimulating ? 0.3 : 1
+              }}
+              title="Change Data"
+              disabled={isSimulating}
+            >
+              <Watch size={14} /> Change
+            </button>
+            <div style={{ width: '1px', background: 'rgba(34, 211, 238, 0.3)', height: '16px' }}></div>
+            <button 
+              onClick={() => { if(!isSimulating) { setImportedRoute(null); setShowActivityBanner(false); } }}
+              style={{ 
+                background: 'transparent', border: 'none', color: '#fca5a5', padding: '8px 12px', 
+                cursor: isSimulating ? 'not-allowed' : 'pointer', 
+                display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'inherit', fontWeight: 'inherit', textTransform: 'inherit',
+                opacity: isSimulating ? 0.3 : 1
+              }}
+              title="Remove Data"
+              disabled={isSimulating}
+            >    
             <Trash2 size={14} /> Remove
           </button>
         </div>
@@ -706,8 +718,16 @@ function App() {
       <div className={`layer-legend-panel ${isProfileMinimized ? 'minimized' : ''}`}>
         <div 
           className="legend-item"
-          onClick={() => setShowTrailLayer(prev => !prev)}
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', opacity: showTrailLayer ? 1 : 0.5, transition: 'opacity 0.2s' }}
+          onClick={() => !isSimulating && setShowTrailLayer(prev => !prev)}
+          style={{ 
+            cursor: isSimulating ? 'not-allowed' : 'pointer', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            opacity: isSimulating ? 0.3 : (showTrailLayer ? 1 : 0.5), 
+            transition: 'opacity 0.2s',
+            pointerEvents: isSimulating ? 'none' : 'auto'
+          }}
           title="Tampilkan/Sembunyikan Jalur Pendakian"
         >
           <div style={{ width: '20px', height: '4px', background: 'linear-gradient(90deg, #10b981, #f59e0b, #ef4444)', borderRadius: '2px', boxShadow: '0 0 6px rgba(245, 158, 11, 0.4)' }}></div>
@@ -715,8 +735,16 @@ function App() {
         </div>
         <div 
           className="legend-item"
-          onClick={() => setShowPoiLayer(prev => !prev)}
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', opacity: showPoiLayer ? 1 : 0.5, transition: 'opacity 0.2s' }}
+          onClick={() => !isSimulating && setShowPoiLayer(prev => !prev)}
+          style={{ 
+            cursor: isSimulating ? 'not-allowed' : 'pointer', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            opacity: isSimulating ? 0.3 : (showPoiLayer ? 1 : 0.5), 
+            transition: 'opacity 0.2s',
+            pointerEvents: isSimulating ? 'none' : 'auto'
+          }}
           title="Tampilkan/Sembunyikan Point of Interest"
         >
           <MapPin size={16} color="#3b82f6" fill="#1e3a8a" />

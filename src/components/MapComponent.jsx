@@ -80,14 +80,14 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
            totalDist += distSegment;
            
            if (coordTimes[idx] && lastValidTime) {
-             let diffSecs = (new Date(coordTimes[idx]).getTime() - lastValidTime) / 1000;
-             if (diffSecs < 0) diffSecs = 0;
-             // Batasi gap waktu maksimal 5 menit (300 detik) untuk mencegah lonjakan waktu jika jam di-pause lama
-             if (diffSecs > 300) diffSecs = 300; 
-             cumTime += diffSecs;
+             let diffMins = (new Date(coordTimes[idx]).getTime() - lastValidTime) / 60000;
+             if (diffMins < 0) diffMins = 0;
+             // Batasi gap waktu maksimal 5 menit untuk mencegah lonjakan waktu jika jam di-pause lama
+             if (diffMins > 5) diffMins = 5; 
+             cumTime += diffMins;
              lastValidTime = new Date(coordTimes[idx]).getTime();
            } else {
-             cumTime += distSegment * 720; // Fallback kecepatan mendaki
+             cumTime += distSegment * 12; // Fallback kecepatan mendaki 12 menit/km
            }
         }
         return {
@@ -523,8 +523,8 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             let lastTime = 0;
             const isImported = !!window.mapConsole.importedSimulationData;
             
-            // Target durasi: rute default ~8 detik, rute impor ~15 detik (timelapse cepat)
-            const targetDurationMs = isImported ? 15000 : 8000;
+            // Target durasi disamakan persis sekitar ~5 detik untuk rute mana pun (efek simulasi instan)
+            const targetDurationMs = 5000;
             // Anggap 60fps (~16ms per frame)
             const totalFrames = targetDurationMs / 16;
             const stepSize = Math.max(0.1, activeData.length / totalFrames);

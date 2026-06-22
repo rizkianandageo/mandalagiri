@@ -96,12 +96,6 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
     }
 
     let displayGeojson = importedRoute.geojson;
-    try {
-      // Simplify route to improve WebGL rendering performance (tolerance: ~5 meters)
-      displayGeojson = turf.simplify(importedRoute.geojson, { tolerance: 0.00005, highQuality: false, mutate: false });
-    } catch (err) {
-      console.warn('Failed to simplify route:', err);
-    }
 
     // Generate simulasi navigasi dari rute resolusi penuh (agar mulus)
     if (window.mapConsole && importedRoute.geojson && importedRoute.geojson.features.length > 0) {

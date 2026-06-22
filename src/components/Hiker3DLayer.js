@@ -31,7 +31,8 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
                 wireframe: false,
                 depthTest: false,
                 depthWrite: false,
-                transparent: true
+                transparent: true,
+                side: THREE.DoubleSide
             });
             this.debugSphere = new THREE.Mesh(sphereGeo, sphereMat);
             this.scene.add(this.debugSphere);
@@ -52,6 +53,9 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
                             child.material.depthTest = false;
                             child.material.depthWrite = false;
                             child.material.transparent = true;
+                            // Sangat penting: karena kita menggunakan -scale pada sumbu Y, model menjadi 'inside-out'
+                            // yang membuatnya hilang karena Backface Culling. Harus DoubleSide!
+                            child.material.side = THREE.DoubleSide;
                         }
                     }
                 });
@@ -119,6 +123,8 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
 
             // Buat matriks transformasi untuk posisi, skala, dan rotasi model
             // HARUS menggunakan -scale pada sumbu Y karena MapLibre Mercator dan Three.js memiliki orientasi Y yang terbalik!
+            // CATATAN: Penggunaan -scale ini akan membalikkan Winding Order face, 
+            // sehingga material HARUS diset THREE.DoubleSide agar tidak tembus pandang/hilang.
             const l = new THREE.Matrix4()
                 .makeTranslation(mercatorOrigin.x, mercatorOrigin.y, mercatorOrigin.z)
                 .scale(new THREE.Vector3(scale, -scale, scale))

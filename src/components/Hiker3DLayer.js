@@ -36,6 +36,15 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
                 this.model.traverse((child) => {
                     if (child.isMesh) {
                         child.frustumCulled = false;
+                        if (child.material) {
+                            // Pastikan material terlihat solid dan mencolok
+                            // Hapus transparansi agar tidak tembus pandang
+                            child.material.transparent = false;
+                            child.material.opacity = 1.0;
+                            child.material.depthTest = true;
+                            child.material.depthWrite = true;
+                            child.material.needsUpdate = true;
+                        }
                     }
                 });
 
@@ -74,7 +83,11 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             // Dapatkan elevasi terrain di titik model
             let elevation = 0;
             if (this.map.queryTerrainElevation) {
-                elevation = (this.map.queryTerrainElevation(lngLat) || 0);
+                const terrainElev = this.map.queryTerrainElevation(lngLat) || 0;
+                // Tambahkan offset agar model berada di ATAS terrain, tidak menembus
+                // Offset dalam meter — disesuaikan dengan tinggi model (modelSizeMeters)
+                const elevationOffset = 30; // meter di atas terrain
+                elevation = terrainElev + elevationOffset;
             }
 
             // Konversi ke Mercator koordinat dengan elevasi
@@ -84,7 +97,7 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             const meterScale = mercator.meterInMercatorCoordinateUnits();
 
             // Ukuran visual model dalam meter (dibesarkan agar terlihat dari ketinggian)
-            const modelSizeMeters = 150;
+            const modelSizeMeters = 200;
             const scale = meterScale * modelSizeMeters;
 
             // ---------------------------------------------------------------

@@ -26,7 +26,13 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
 
             // Tambahkan Sphere Merah raksasa sebagai penanda debug
             const sphereGeo = new THREE.SphereGeometry(1, 32, 32); // radius 1 unit (karena akan di-scale)
-            const sphereMat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: false });
+            const sphereMat = new THREE.MeshBasicMaterial({ 
+                color: 0xff0000, 
+                wireframe: false,
+                depthTest: false,
+                depthWrite: false,
+                transparent: true
+            });
             this.debugSphere = new THREE.Mesh(sphereGeo, sphereMat);
             this.scene.add(this.debugSphere);
             
@@ -38,10 +44,15 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             const loader = new GLTFLoader();
             loader.load(modelUrl, (gltf) => {
                 this.model = gltf.scene;
-                // Cegah WebGL menghilangkan model yang dianggap di luar layar
+                // Cegah WebGL menghilangkan model yang dianggap di luar layar dan render mutlak di atas segalanya
                 this.model.traverse((child) => {
                     if (child.isMesh) {
                         child.frustumCulled = false;
+                        if (child.material) {
+                            child.material.depthTest = false;
+                            child.material.depthWrite = false;
+                            child.material.transparent = true;
+                        }
                     }
                 });
                 this.scene.add(this.model);
@@ -92,8 +103,8 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             const currentZoom = this.map.getZoom();
             const zoomScaleFactor = Math.pow(2, 14 - currentZoom); // 1 di zoom 14, membesar saat dizoom out
             
-            // Coba perbesar 100x lipat karena bisa jadi unit GLB aslinya berbentuk centimeter atau millimeter
-            const visualSize = 150000 * Math.max(1, zoomScaleFactor); // Ukuran super besar sementara untuk debug
+            // Kembalikan ke ukuran logis (1500 unit)
+            const visualSize = 1500 * Math.max(1, zoomScaleFactor); 
             
             const scale = meterScale * visualSize;
 
@@ -129,6 +140,8 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
                 this.mixer.update(delta);
             }
             
+            // Pastikan THREE tidak menghapus canvas dari MapLibre
+            this.renderer.autoClear = false;
             this.renderer.resetState();
             this.renderer.render(this.scene, this.camera);
             

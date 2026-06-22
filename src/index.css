@@ -363,6 +363,9 @@ body {
 }
 
 /* Custom MapLibre Popup */
+.maplibregl-popup {
+  z-index: 9999 !important; /* Memastikan popup selalu di atas panel HUD mana pun */
+}
 .maplibregl-popup-content {
   background: transparent !important;
   box-shadow: none !important;

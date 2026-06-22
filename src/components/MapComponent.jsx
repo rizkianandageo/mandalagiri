@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
+import { createHiker3DLayer } from './Hiker3DLayer';
 
 const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList, showTrailLayer = true, showPoiLayer = true, importedRoute, importedPhotos = [] }) => {
   const mapContainer = useRef(null);
@@ -622,24 +623,14 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
               // Frame-rate independent: Poin yang dilewati per ms
               const pointsPerMs = (endIdx - startIdx) / targetDurationMs;
 
-              // Buat elemen kustom untuk marker pendaki
-              const el = document.createElement('div');
-              el.className = 'hiker-marker';
-              el.style.width = '32px';
-              el.style.height = '32px';
-              el.style.background = '#ffffff';
-              el.style.borderRadius = '50%';
-              el.style.border = '2px solid var(--accent)';
-              el.style.display = 'flex';
-              el.style.alignItems = 'center';
-              el.style.justifyContent = 'center';
-              el.style.fontSize = '20px';
-              el.style.boxShadow = '0 0 15px rgba(34, 211, 238, 0.6)';
-              el.innerHTML = '🚶';
-
-              hikerMarker = new maplibregl.Marker({ element: el })
-                .setLngLat([activeData[startIdx].lng, activeData[startIdx].lat])
-                .addTo(map.current);
+              // Tambahkan Hiker 3D Layer
+              if (!map.current.getLayer('hiker-3d-model')) {
+                const hikerLayer = createHiker3DLayer(map.current, `${import.meta.env.BASE_URL}models/sierra_the_trailblazer.glb`);
+                map.current.addLayer(hikerLayer);
+              }
+              window.mapConsole.isFlying = true;
+              window.mapConsole.hiker3DPosition = [activeData[startIdx].lng, activeData[startIdx].lat];
+              window.mapConsole.hiker3DRotation = map.current.getBearing();
 
               let currentBearing = map.current.getBearing();
               let lastTickTime = 0;
@@ -701,7 +692,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     cumulative_time: interpTime - startPt.cumulative_time
                   };
 
-                  hikerMarker.setLngLat([interpLng, interpLat]);
+                  window.mapConsole.hiker3DPosition = [interpLng, interpLat];
 
                   let targetBearing = currentBearing;
                   // Look-ahead menengah agar tidak terlalu lambat atau terlalu responsif
@@ -718,6 +709,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   diff = ((diff + 180) % 360) - 180;
                   // Smoothing rotasi kamera
                   currentBearing += diff * 0.05;
+                  window.mapConsole.hiker3DRotation = currentBearing;
 
                   // Hitung padding dinamis berdasarkan panel UI yang terbuka agar icon pendaki tetap di tengah layar yang terlihat
                   let dynPadding = { top: 0, bottom: 0, left: 0, right: 0 };
@@ -880,10 +872,10 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             if(flyTimeoutId) clearTimeout(flyTimeoutId);
             if(flyAnimationId) cancelAnimationFrame(flyAnimationId);
             isFlying = false;
-            if(hikerMarker) {
-              hikerMarker.remove();
-              hikerMarker = null;
-            }
+              window.mapConsole.isFlying = false;
+              if (map.current.getLayer('hiker-3d-model')) {
+                map.current.removeLayer('hiker-3d-model');
+              }
             
             // Kembalikan rute penuh saat simulasi dihentikan
             if (window.mapConsole.baseImportedGeojson) {

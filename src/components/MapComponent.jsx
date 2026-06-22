@@ -96,6 +96,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
     }
 
     let displayGeojson = importedRoute.geojson;
+    if (window.mapConsole) window.mapConsole.baseImportedGeojson = displayGeojson;
 
     // Generate simulasi navigasi dari rute resolusi penuh (agar mulus)
     if (window.mapConsole && importedRoute.geojson && importedRoute.geojson.features.length > 0) {
@@ -819,6 +820,47 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                       }
                     }
                   }
+                  
+                  // JEJAK PENDAKI (TRAIL)
+                  // Hapus rute asli dan gambar ulang secara progresif mengikuti icon
+                  const isImported = !!window.mapConsole.importedSimulationData;
+                  if (isImported) {
+                    const src = map.current.getSource('imported-route-source');
+                    const baseGeojson = window.mapConsole.baseImportedGeojson;
+                    if (src && baseGeojson && baseGeojson.features && baseGeojson.features.length > 0) {
+                      const coords = baseGeojson.features[0].geometry.coordinates;
+                      const trailCoords = coords.slice(0, currentIndex + 1);
+                      trailCoords.push([interpLng, interpLat]);
+                      src.setData({
+                        type: 'FeatureCollection',
+                        features: [{
+                          type: 'Feature',
+                          properties: baseGeojson.features[0].properties || {},
+                          geometry: { type: 'LineString', coordinates: trailCoords }
+                        }]
+                      });
+                    }
+                  } else {
+                    const src = map.current.getSource('jalur-slope-source');
+                    const baseFeatures = window.mapConsole.baseRouteFeatures;
+                    if (src && baseFeatures) {
+                      const trailFeatures = baseFeatures.slice(0, currentIndex);
+                      if (currentIndex < baseFeatures.length && activeData[currentIndex]) {
+                        trailFeatures.push({
+                          type: 'Feature',
+                          properties: { slope_cat: baseFeatures[currentIndex]?.properties?.slope_cat || 'easy' },
+                          geometry: {
+                            type: 'LineString',
+                            coordinates: [
+                              [activeData[currentIndex].lng, activeData[currentIndex].lat],
+                              [interpLng, interpLat]
+                            ]
+                          }
+                        });
+                      }
+                      src.setData({ type: 'FeatureCollection', features: trailFeatures });
+                    }
+                  }
 
                   // Kirim data telemetri real-time ke HUD (Throttled max 10fps agar tidak memblokir state React)
                   if (time - lastTickTime > 100) {
@@ -841,6 +883,16 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             if(hikerMarker) {
               hikerMarker.remove();
               hikerMarker = null;
+            }
+            
+            // Kembalikan rute penuh saat simulasi dihentikan
+            if (window.mapConsole.baseImportedGeojson) {
+              const src = map.current.getSource('imported-route-source');
+              if (src) src.setData(window.mapConsole.baseImportedGeojson);
+            }
+            if (window.mapConsole.baseRouteFeatures) {
+              const src = map.current.getSource('jalur-slope-source');
+              if (src) src.setData({ type: 'FeatureCollection', features: window.mapConsole.baseRouteFeatures });
             }
           };
         })
@@ -884,6 +936,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
     }
 
     src.setData({ type: 'FeatureCollection', features });
+    if (window.mapConsole) window.mapConsole.baseRouteFeatures = features;
   }, [profileData, startPoi, endPoi]);
 
   return <div ref={mapContainer} className="map-container" />;

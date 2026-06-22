@@ -206,7 +206,7 @@ export const parseActivityFile = async (file) => {
               type: 'FeatureCollection',
               features: [{
                 type: 'Feature',
-                properties: { ...stats },
+                properties: { ...stats, coordTimes: timestamps },
                 geometry: {
                   type: 'LineString',
                   coordinates: coordinates

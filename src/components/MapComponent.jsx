@@ -64,7 +64,11 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
 
     // Generate simulasi navigasi dari rute resolusi penuh (agar mulus)
     if (window.mapConsole && importedRoute.geojson && importedRoute.geojson.features.length > 0) {
-      const coords = importedRoute.geojson.features[0].geometry.coordinates;
+      const feature = importedRoute.geojson.features[0];
+      const coords = feature.geometry.coordinates;
+      const coordTimes = feature.properties?.coordTimes || [];
+      const startTime = coordTimes.length > 0 ? new Date(coordTimes[0]).getTime() : 0;
+      
       let totalDist = 0;
       let cumTime = 0;
       window.mapConsole.importedSimulationData = coords.map((c, idx) => {
@@ -72,7 +76,12 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
            const pt1 = turf.point(coords[idx-1]);
            const pt2 = turf.point(c);
            totalDist += turf.distance(pt1, pt2, {units: 'kilometers'});
-           cumTime = totalDist * 720; // Aproksimasi waktu: 12 menit per km
+           
+           if (coordTimes[idx] && startTime) {
+             cumTime = (new Date(coordTimes[idx]).getTime() - startTime) / 1000;
+           } else {
+             cumTime = totalDist * 720; // Fallback jika tidak ada timestamp (12 min/km)
+           }
         }
         return {
           lng: c[0],
@@ -505,8 +514,11 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             isFlying = true;
             let i = startIdx;
             let lastTime = 0;
-            // Kecepatan adaptif: Rute impor butuh interval sedikit lebih besar (40ms) untuk menutupi gap poin
-            const speed = window.mapConsole.importedSimulationData ? 40 : 25; 
+            const isImported = !!window.mapConsole.importedSimulationData;
+            const speed = isImported ? 30 : 25; // ms per frame
+            
+            // Atur agar animasi impor berjalan konsisten sekitar 30-40 detik (1200 frame)
+            const stepSize = isImported ? Math.max(1, Math.ceil(activeData.length / 1200)) : 1;
 
             // Buat elemen kustom untuk marker pendaki
             const el = document.createElement('div');
@@ -603,7 +615,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   detail: offsetPt
                 }));
                 
-                i++;
+                i += stepSize;
                 lastTime = time;
               }
               flyAnimationId = requestAnimationFrame(animate);

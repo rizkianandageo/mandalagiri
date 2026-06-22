@@ -913,7 +913,7 @@ function App() {
             textShadow: isSimulating ? '0 0 8px rgba(239,68,68,0.5)' : '0 0 8px rgba(34,211,238,0.5)',
             marginTop: '8px'
           }}>
-            {isSimulating ? <>Stop<br/>Simulation</> : <>Navigation<br/>Simulation</>}
+            {isSimulating ? <>Stop<br/>{importedRoute ? 'Data' : 'Simulation'}</> : <>Navigation<br/>{importedRoute ? 'Data' : 'Simulation'}</>}
           </div>
         </div>
           </>

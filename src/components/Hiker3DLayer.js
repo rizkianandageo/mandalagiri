@@ -7,174 +7,154 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
         id: 'hiker-3d-model',
         type: 'custom',
         renderingMode: '3d',
-        
+
         onAdd: function (map, gl) {
+            this.map = map;
+
+            // Kamera Three.js — kita akan memanipulasi projectionMatrix-nya langsung
             this.camera = new THREE.Camera();
             this.scene = new THREE.Scene();
-            
+
             // Pencahayaan agar model tidak gelap
-            const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
             this.scene.add(ambientLight);
-            
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-            directionalLight.position.set(100, 100, 100).normalize();
-            this.scene.add(directionalLight);
 
-            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1);
-            directionalLight2.position.set(-100, -100, -100).normalize();
-            this.scene.add(directionalLight2);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
+            dirLight.position.set(1, 1, 1).normalize();
+            this.scene.add(dirLight);
 
-            // Tambahkan Sphere Merah raksasa sebagai penanda debug
-            const sphereGeo = new THREE.SphereGeometry(1, 32, 32); // radius 1 unit (karena akan di-scale)
-            const sphereMat = new THREE.MeshBasicMaterial({ 
-                color: 0xff0000, 
-                wireframe: false,
-                depthTest: false,
-                depthWrite: false,
-                transparent: true,
-                side: THREE.DoubleSide
-            });
-            this.debugSphere = new THREE.Mesh(sphereGeo, sphereMat);
-            this.scene.add(this.debugSphere);
-            
             this.mixer = null;
             this.model = null;
             this.lastTime = performance.now();
-            
+            this.frameCount = 0;
+
             // Load Model GLB
             const loader = new GLTFLoader();
             loader.load(modelUrl, (gltf) => {
                 this.model = gltf.scene;
-                // Cegah WebGL menghilangkan model yang dianggap di luar layar dan render mutlak di atas segalanya
+
                 this.model.traverse((child) => {
                     if (child.isMesh) {
                         child.frustumCulled = false;
-                        if (child.material) {
-                            child.material.depthTest = false;
-                            child.material.depthWrite = false;
-                            child.material.transparent = true;
-                            // Sangat penting: karena kita menggunakan -scale pada sumbu Y, model menjadi 'inside-out'
-                            // yang membuatnya hilang karena Backface Culling. Harus DoubleSide!
-                            child.material.side = THREE.DoubleSide;
-                        }
                     }
                 });
+
                 this.scene.add(this.model);
-                
+
                 // Mainkan animasi pertama jika ada
                 if (gltf.animations && gltf.animations.length > 0) {
                     this.mixer = new THREE.AnimationMixer(this.model);
                     this.mixer.clipAction(gltf.animations[0]).play();
                 }
+
+                console.log('Hiker3D: Model GLB berhasil dimuat!');
             }, undefined, (error) => {
-                console.error("Gagal memuat model 3D pendaki:", error);
+                console.error('Gagal memuat model 3D pendaki:', error);
             });
-            
-            this.map = map;
-            
+
             // Integrasi WebGL Renderer Three.js ke canvas MapLibre
             this.renderer = new THREE.WebGLRenderer({
                 canvas: map.getCanvas(),
                 context: gl,
                 antialias: true,
-                alpha: true
             });
             this.renderer.autoClear = false;
+            this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         },
-        
-        render: function (gl, matrix) {
+
+        render: function (gl, args) {
             if (!this.model) return;
-            
-            // Mengambil posisi dan rotasi terbaru dari global window (di-update oleh animate loop MapComponent)
-            const lngLat = window.mapConsole.hiker3DPosition;
+
+            // Ambil posisi dan rotasi dari global state (di-update oleh MapComponent)
+            const lngLat = window.mapConsole?.hiker3DPosition;
             if (!lngLat) return;
 
-            const bearing = window.mapConsole.hiker3DRotation || 0; 
-            
-            // Konversi ke koordinat MapLibre (Mercator) dengan dukungan elevasi terrain
+            const bearing = window.mapConsole?.hiker3DRotation || 0;
+
+            // Dapatkan elevasi terrain di titik model
             let elevation = 0;
             if (this.map.queryTerrainElevation) {
-                // Tambahkan sedikit offset misal +5 meter agar kaki tidak terpotong kontur
-                elevation = (this.map.queryTerrainElevation(lngLat) || 0) + 5; 
+                elevation = (this.map.queryTerrainElevation(lngLat) || 0);
             }
-            const mercatorOrigin = maplibregl.MercatorCoordinate.fromLngLat(lngLat, elevation);
-            
-            // Hitung skala berdasarkan meter riil agar ukurannya konsisten
-            // Perbesar ukuran model agar terlihat jelas dari atas (misal 500 meter)
-            const meterScale = mercatorOrigin.meterInMercatorCoordinateUnits();
-            
-            // Dinamiskan scale berdasarkan zoom level agar tetap terlihat saat zoom out
-            const currentZoom = this.map.getZoom();
-            const zoomScaleFactor = Math.pow(2, 14 - currentZoom); // 1 di zoom 14, membesar saat dizoom out
-            
-            // Kembalikan ke ukuran logis (1500 unit)
-            const visualSize = 1500 * Math.max(1, zoomScaleFactor); 
-            
-            const scale = meterScale * visualSize;
 
-            const m = new THREE.Matrix4().fromArray(matrix);
-            
-            // Debugging log tiap ~60 frame
-            if (!this.frameCount) this.frameCount = 0;
+            // Konversi ke Mercator koordinat dengan elevasi
+            const mercator = maplibregl.MercatorCoordinate.fromLngLat(lngLat, elevation);
+
+            // meterInMercatorCoordinateUnits() = faktor konversi meter → Mercator units
+            const meterScale = mercator.meterInMercatorCoordinateUnits();
+
+            // Ukuran visual model dalam meter (dibesarkan agar terlihat dari ketinggian)
+            const modelSizeMeters = 150;
+            const scale = meterScale * modelSizeMeters;
+
+            // ---------------------------------------------------------------
+            // POLA RESMI MapLibre + Three.js:
+            // "args.defaultProjectionData.mainMatrix" adalah MVP matrix dari MapLibre
+            // yang sudah merupakan produk: Projection × View × (identitas)
+            // Kita hanya perlu kalikan dengan model transform matrix (L)
+            // dan set hasilnya ke camera.projectionMatrix.
+            // Ini persis pola dari dokumentasi resmi MapLibre.
+            // ---------------------------------------------------------------
+
+            // Gunakan matrix MVP yang diberikan MapLibre (format column-major Float64 / Float32)
+            // args bisa berupa matrix langsung (versi lama) atau objek (versi baru)
+            let mvpArray;
+            if (Array.isArray(args) || args instanceof Float64Array || args instanceof Float32Array) {
+                // API lama: render(gl, matrix)
+                mvpArray = args;
+            } else if (args && args.defaultProjectionData) {
+                // API baru: render(gl, options) 
+                mvpArray = args.defaultProjectionData.mainMatrix;
+            } else {
+                mvpArray = args;
+            }
+
+            const m = new THREE.Matrix4().fromArray(mvpArray);
+
+            // Model Transform Matrix (L): posisi, skala, rotasi
+            // Perhatian: MapLibre menggunakan koordinat tangan-kiri (Y ke bawah di layar),
+            // sedangkan Three.js tangan-kanan (Y ke atas). Untuk GLTF, kita rotasi sumbu X 90°
+            // agar model berdiri tegak (GLTF: Y-up → MapLibre: Z-up).
+            // TIDAK menggunakan -scale Y karena akan menyebabkan winding order terbalik.
+            const rotationX = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+            const rotationZ = new THREE.Matrix4().makeRotationZ((bearing) * Math.PI / 180);
+
+            const l = new THREE.Matrix4()
+                .makeTranslation(mercator.x, mercator.y, mercator.z)
+                .scale(new THREE.Vector3(scale, scale, scale))
+                .multiply(rotationX)
+                .multiply(rotationZ);
+
+            // Set camera matrix = MVP dari MapLibre × Model transform
+            this.camera.projectionMatrix = m.multiply(l);
+            this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
+
+            // Debug log setiap 60 frame
             this.frameCount++;
             if (this.frameCount % 60 === 0) {
-                console.log("Hiker3D Debug: rendering model di", lngLat, "elevation:", elevation, "scale:", scale, "zoom:", currentZoom);
+                const currentZoom = this.map.getZoom();
+                console.log('Hiker3D Debug: rendering model di', lngLat,
+                    'elevation:', elevation, 'scale:', scale, 'zoom:', currentZoom,
+                    'mercator:', mercator.x, mercator.y, mercator.z);
             }
 
-            // Buat matriks transformasi untuk posisi, skala, dan rotasi model
-            // HARUS menggunakan -scale pada sumbu Y karena MapLibre Mercator dan Three.js memiliki orientasi Y yang terbalik!
-            // CATATAN: Penggunaan -scale ini akan membalikkan Winding Order face, 
-            // sehingga material HARUS diset THREE.DoubleSide agar tidak tembus pandang/hilang.
-            const l = new THREE.Matrix4()
-                .makeTranslation(mercatorOrigin.x, mercatorOrigin.y, mercatorOrigin.z)
-                .scale(new THREE.Vector3(scale, -scale, scale))
-                // Sesuaikan sumbu Z (Heading) ke rotasi maplibre (-bearing)
-                .multiply(new THREE.Matrix4().makeRotationZ(-bearing * Math.PI / 180)) 
-                // Model GLTF umumnya menghadap Z+ dengan Y+ ke atas. 
-                // Di MapLibre, Z+ adalah elevasi (ke atas langit).
-                .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2)); 
-                
-            this.camera.projectionMatrix = m.multiply(l);
-            
-            // Update animasi tanpa THREE.Clock
+            // Update animasi
             if (this.mixer) {
                 const now = performance.now();
                 if (!this.lastTime) this.lastTime = now;
                 let delta = (now - this.lastTime) / 1000;
-                if (delta > 0.1) delta = 0.1; // clamp delta
+                if (delta > 0.1) delta = 0.1;
                 this.lastTime = now;
                 this.mixer.update(delta);
             }
-            
-            // THREE.js secara default merender ke 'null' (default framebuffer layar). 
-            // Namun jika MapLibre mengaktifkan 3D Terrain, ia menggunakan Framebuffer internal (FBO).
-            // Kita harus memaksa THREE.js untuk merender ke FBO milik MapLibre dengan mencegat fungsi bindFramebuffer.
-            const currentFBO = gl.getParameter(gl.FRAMEBUFFER_BINDING);
-            const currentViewport = gl.getParameter(gl.VIEWPORT);
-            
-            const originalBindFramebuffer = gl.bindFramebuffer;
-            gl.bindFramebuffer = function (target, fbo) {
-                if (fbo === null) {
-                    originalBindFramebuffer.call(this, target, currentFBO);
-                } else {
-                    originalBindFramebuffer.call(this, target, fbo);
-                }
-            };
 
-            // Pastikan THREE tidak menghapus canvas dari MapLibre
-            this.renderer.autoClear = false;
+            // Reset state WebGL Three.js agar tidak crash dengan state MapLibre
             this.renderer.resetState();
-            
-            // PAKSA Three.js menggunakan Viewport MapLibre agar gambar tidak meleset
-            this.renderer.setViewport(currentViewport[0], currentViewport[1], currentViewport[2], currentViewport[3]);
-            
             this.renderer.render(this.scene, this.camera);
-            
-            // Kembalikan fungsi asli setelah THREE selesai merender
-            gl.bindFramebuffer = originalBindFramebuffer;
-            
-            // Terus render ulang untuk animasi mulus (framerate maksimum)
-            if (window.mapConsole.isFlying) {
+            // Jangan restore state — biarkan MapLibre lanjut dengan state-nya sendiri
+
+            // Trigger repaint selama animasi berlangsung
+            if (window.mapConsole?.isFlying) {
                 this.map.triggerRepaint();
             }
         }

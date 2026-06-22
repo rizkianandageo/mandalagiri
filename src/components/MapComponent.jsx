@@ -624,9 +624,18 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
 
             let currentBearing = map.current.getBearing();
             let lastTickTime = 0;
+            let pausedUntil = 0;
+            const shownItems = new Set();
 
             const animate = (time) => {
               if (!isFlying) return;
+              
+              // Jeda animasi saat popup foto/checkpoint muncul
+              if (time < pausedUntil) {
+                flyAnimationId = requestAnimationFrame(animate);
+                return;
+              }
+
               if (Math.floor(i) >= endIdx) {
                 window.mapConsole.stopFlyThrough();
                 return;
@@ -635,25 +644,38 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
               // Update konstan 60fps (tiap ~16ms)
               if (time - lastTime >= 16) {
                 const currentIndex = Math.floor(i);
-                const pt = activeData[currentIndex];
+                const nextIndex = Math.min(currentIndex + 1, activeData.length - 1);
+                const frac = i - currentIndex;
+                
+                const pt1 = activeData[currentIndex];
+                const pt2 = activeData[nextIndex];
+                
+                // Interpolasi koordinat untuk pergerakan sangat halus (smooth cinematic)
+                const interpLng = pt1.lng + (pt2.lng - pt1.lng) * frac;
+                const interpLat = pt1.lat + (pt2.lat - pt1.lat) * frac;
+                const interpDistance = pt1.distance + (pt2.distance - pt1.distance) * frac;
+                const interpTime = pt1.cumulative_time + (pt2.cumulative_time - pt1.cumulative_time) * frac;
+
                 const startPt = activeData[startIdx];
                 const offsetPt = {
-                  ...pt,
-                  originalDistance: pt.distance,
-                  distance: pt.distance - startPt.distance,
-                  cumulative_time: pt.cumulative_time - startPt.cumulative_time
+                  ...pt1, // Bawa elevasi & slope dari pt1
+                  lng: interpLng,
+                  lat: interpLat,
+                  originalDistance: interpDistance,
+                  distance: interpDistance - startPt.distance,
+                  cumulative_time: interpTime - startPt.cumulative_time
                 };
 
-                hikerMarker.setLngLat([pt.lng, pt.lat]);
+                hikerMarker.setLngLat([interpLng, interpLat]);
 
                 let targetBearing = currentBearing;
                 const lookAheadIndex = Math.min(currentIndex + 10, activeData.length - 1);
                 const nextPt = activeData[lookAheadIndex];
                 
                 if (nextPt) {
-                  const pt1 = turf.point([pt.lng, pt.lat]);
-                  const pt2 = turf.point([nextPt.lng, nextPt.lat]);
-                  targetBearing = turf.bearing(pt1, pt2);
+                  const p1 = turf.point([interpLng, interpLat]);
+                  const p2 = turf.point([nextPt.lng, nextPt.lat]);
+                  targetBearing = turf.bearing(p1, p2);
                 }
 
                 let diff = targetBearing - currentBearing;
@@ -662,7 +684,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
 
                 // Gunakan jumpTo pada 60fps menghasilkan efek timelapse mulus dan tidak ngelag
                 map.current.jumpTo({
-                  center: [pt.lng, pt.lat],
+                  center: [interpLng, interpLat],
                   bearing: currentBearing,
                   pitch: 75,
                   zoom: 15.8,
@@ -673,7 +695,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                 if (!isImported) {
                   const currentPoiList = poiListRef.current;
                   if (currentPoiList && currentPoiList.length > 0) {
-                    const currentTurfPt = turf.point([pt.lng, pt.lat]);
+                    const currentTurfPt = turf.point([offsetPt.lng, offsetPt.lat]);
                     let closestPoi = null;
                     let minDistance = 0.05; // Radius 50 meter (0.05 km)
                     
@@ -688,6 +710,10 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     
                     if (closestPoi) {
                       showPoiPopup(closestPoi.name, closestPoi.jalur || 'Ranu Pane', [closestPoi.lng, closestPoi.lat]);
+                      if (!shownItems.has('poi_' + closestPoi.name)) {
+                        shownItems.add('poi_' + closestPoi.name);
+                        pausedUntil = time + 2500; // Pause 2.5s
+                      }
                     } else {
                       if (activePopupRef.current && activePopupRef.current.poiName) {
                         activePopupRef.current.remove();
@@ -699,7 +725,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   // Cek Foto terdekat (hanya untuk navigasi data/impor)
                   const photos = importedPhotosRef.current;
                   if (photos && photos.length > 0) {
-                    const currentTurfPt = turf.point([pt.lng, pt.lat]);
+                    const currentTurfPt = turf.point([offsetPt.lng, offsetPt.lat]);
                     let closestPhoto = null;
                     let minDistance = 0.05; // Radius 50 meter (0.05 km)
                     
@@ -714,6 +740,10 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     
                     if (closestPhoto) {
                       showPhotoPopup(closestPhoto);
+                      if (!shownItems.has('photo_' + closestPhoto.id)) {
+                        shownItems.add('photo_' + closestPhoto.id);
+                        pausedUntil = time + 2500; // Pause 2.5s
+                      }
                     } else {
                       if (activePopupRef.current && activePopupRef.current.photoId) {
                         activePopupRef.current.remove();

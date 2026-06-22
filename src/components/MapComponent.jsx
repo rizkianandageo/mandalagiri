@@ -71,16 +71,23 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
       
       let totalDist = 0;
       let cumTime = 0;
+      let lastValidTime = startTime;
       window.mapConsole.importedSimulationData = coords.map((c, idx) => {
         if (idx > 0) {
            const pt1 = turf.point(coords[idx-1]);
            const pt2 = turf.point(c);
-           totalDist += turf.distance(pt1, pt2, {units: 'kilometers'});
+           const distSegment = turf.distance(pt1, pt2, {units: 'kilometers'});
+           totalDist += distSegment;
            
-           if (coordTimes[idx] && startTime) {
-             cumTime = (new Date(coordTimes[idx]).getTime() - startTime) / 1000;
+           if (coordTimes[idx] && lastValidTime) {
+             let diffSecs = (new Date(coordTimes[idx]).getTime() - lastValidTime) / 1000;
+             if (diffSecs < 0) diffSecs = 0;
+             // Batasi gap waktu maksimal 5 menit (300 detik) untuk mencegah lonjakan waktu jika jam di-pause lama
+             if (diffSecs > 300) diffSecs = 300; 
+             cumTime += diffSecs;
+             lastValidTime = new Date(coordTimes[idx]).getTime();
            } else {
-             cumTime = totalDist * 720; // Fallback jika tidak ada timestamp (12 min/km)
+             cumTime += distSegment * 720; // Fallback kecepatan mendaki
            }
         }
         return {
@@ -512,13 +519,15 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             }
             
             isFlying = true;
-            let i = startIdx;
+            let i = startIdx; // i dijadikan float untuk interpolasi frame
             let lastTime = 0;
             const isImported = !!window.mapConsole.importedSimulationData;
-            const speed = isImported ? 30 : 25; // ms per frame
             
-            // Atur agar animasi impor berjalan konsisten sekitar 30-40 detik (1200 frame)
-            const stepSize = isImported ? Math.max(1, Math.ceil(activeData.length / 1200)) : 1;
+            // Target durasi: rute default ~8 detik, rute impor ~15 detik (timelapse cepat)
+            const targetDurationMs = isImported ? 15000 : 8000;
+            // Anggap 60fps (~16ms per frame)
+            const totalFrames = targetDurationMs / 16;
+            const stepSize = Math.max(0.1, activeData.length / totalFrames);
 
             // Buat elemen kustom untuk marker pendaki
             const el = document.createElement('div');
@@ -543,13 +552,15 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
 
             const animate = (time) => {
               if (!isFlying) return;
-              if (i >= endIdx) {
+              if (Math.floor(i) >= endIdx) {
                 window.mapConsole.stopFlyThrough();
                 return;
               }
 
-              if (time - lastTime > speed) {
-                const pt = activeData[i];
+              // Update konstan 60fps (tiap ~16ms)
+              if (time - lastTime >= 16) {
+                const currentIndex = Math.floor(i);
+                const pt = activeData[currentIndex];
                 const startPt = activeData[startIdx];
                 const offsetPt = {
                   ...pt,
@@ -561,7 +572,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                 hikerMarker.setLngLat([pt.lng, pt.lat]);
 
                 let targetBearing = currentBearing;
-                const lookAheadIndex = Math.min(i + 20, activeData.length - 1);
+                const lookAheadIndex = Math.min(currentIndex + 10, activeData.length - 1);
                 const nextPt = activeData[lookAheadIndex];
                 
                 if (nextPt) {
@@ -574,13 +585,12 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                 diff = ((diff + 180) % 360) - 180;
                 currentBearing += diff * 0.1;
 
-                map.current.easeTo({
+                // Gunakan jumpTo pada 60fps menghasilkan efek timelapse mulus dan tidak ngelag
+                map.current.jumpTo({
                   center: [pt.lng, pt.lat],
                   bearing: currentBearing,
                   pitch: 75,
                   zoom: 15.8,
-                  duration: speed, // Ease smoothly ke titik berikutnya layaknya efek sinematik Relive
-                  easing: (t) => t, // Linear pacing
                   padding: { bottom: 250 }
                 });
 

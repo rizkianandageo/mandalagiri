@@ -595,28 +595,30 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   padding: { bottom: 250 }
                 });
 
-                // Cek POI terdekat
-                const currentPoiList = poiListRef.current;
-                if (currentPoiList && currentPoiList.length > 0) {
-                  const currentTurfPt = turf.point([pt.lng, pt.lat]);
-                  let closestPoi = null;
-                  let minDistance = 0.05; // Radius 50 meter (0.05 km)
-                  
-                  currentPoiList.forEach(poi => {
-                    const poiTurfPt = turf.point([poi.lng, poi.lat]);
-                    const dist = turf.distance(currentTurfPt, poiTurfPt, { units: 'kilometers' });
-                    if (dist < minDistance) {
-                      minDistance = dist;
-                      closestPoi = poi;
-                    }
-                  });
-                  
-                  if (closestPoi) {
-                    showPoiPopup(closestPoi.name, closestPoi.jalur || 'Ranu Pane', [closestPoi.lng, closestPoi.lat]);
-                  } else {
-                    if (activePopupRef.current) {
-                      activePopupRef.current.remove();
-                      activePopupRef.current = null;
+                // Cek POI terdekat (hanya untuk simulasi navigasi rute asli)
+                if (!isImported) {
+                  const currentPoiList = poiListRef.current;
+                  if (currentPoiList && currentPoiList.length > 0) {
+                    const currentTurfPt = turf.point([pt.lng, pt.lat]);
+                    let closestPoi = null;
+                    let minDistance = 0.05; // Radius 50 meter (0.05 km)
+                    
+                    currentPoiList.forEach(poi => {
+                      const poiTurfPt = turf.point([poi.lng, poi.lat]);
+                      const dist = turf.distance(currentTurfPt, poiTurfPt, { units: 'kilometers' });
+                      if (dist < minDistance) {
+                        minDistance = dist;
+                        closestPoi = poi;
+                      }
+                    });
+                    
+                    if (closestPoi) {
+                      showPoiPopup(closestPoi.name, closestPoi.jalur || 'Ranu Pane', [closestPoi.lng, closestPoi.lat]);
+                    } else {
+                      if (activePopupRef.current) {
+                        activePopupRef.current.remove();
+                        activePopupRef.current = null;
+                      }
                     }
                   }
                 }

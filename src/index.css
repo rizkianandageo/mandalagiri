@@ -1319,5 +1319,25 @@ body {
     top: 16px;
     right: 16px;
   }
+  
+  /* Pengecilan Font di Activity Banner Khusus Mobile */
+  .stat-value {
+    font-size: 0.95rem;
+  }
+  .stat-unit {
+    font-size: 0.7rem;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+  }
+  .column-title {
+    font-size: 0.9rem;
+  }
+  .section-title {
+    font-size: 1rem;
+  }
+  .stat-subtext {
+    font-size: 0.65rem;
+  }
 }
 

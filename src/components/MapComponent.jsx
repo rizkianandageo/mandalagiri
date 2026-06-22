@@ -722,20 +722,9 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   let dynPadding = { top: 0, bottom: 0, left: 0, right: 0 };
                   try {
                     const isMobile = window.innerWidth <= 768;
-                    const maxPadY = window.innerHeight * 0.4; // Batas max 40% agar MapLibre tidak crash
                     const maxPadX = window.innerWidth * 0.4;
                     
-                    const bottomPanel = document.querySelector('.hud-bottom');
-                    if (bottomPanel) {
-                      const rect = bottomPanel.getBoundingClientRect();
-                      // Ambil tinggi panel bawah yang terekspos di viewport
-                      dynPadding.bottom = Math.min(Math.max(0, window.innerHeight - rect.top), maxPadY);
-                    }
-                    
-                    if (isMobile) {
-                      const topBar = document.querySelector('.hud-topbar');
-                      if (topBar) dynPadding.top = topBar.offsetHeight;
-                    } else {
+                    if (!isMobile) {
                       const leftPanel = document.querySelector('.hud-left-container');
                       if (leftPanel) {
                         const rect = leftPanel.getBoundingClientRect();
@@ -748,10 +737,13 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                       }
                     }
                     
-                    // Tambahkan "3D Headroom" pada top padding untuk mengimbangi distorsi pitch 45 derajat.
-                    // Jika tidak ada ini, titik koordinat icon akan ada di tengah, tapi tinggi gunung 3D akan 
-                    // menabrak/melebihi batas atas layar. Headroom ini menggeser fokus kamera lebih ke bawah.
-                    dynPadding.top = Math.min((dynPadding.top || 0) + (window.innerHeight * 0.25), maxPadY);
+                    // VERTICAL PADDING DI-DISABLE: 
+                    // Render engine MapLibre GL 3D (pitch: 45) secara alami mendorong elevasi visual ke atas layar.
+                    // Menambahkan padding bottom akan menggeser pusat rotasi ke atas, sehingga icon pendaki akan 
+                    // menabrak batas atas layar. Karena user lebih menyukai rasio center vertikal murni (seperti saat flyTo awal),
+                    // kita set padding atas dan bawah ke 0 agar elevasi 3D terpusat secara natural.
+                    dynPadding.top = 0;
+                    dynPadding.bottom = 0;
                     
                   } catch (e) {
                     // Abaikan jika error saat query DOM

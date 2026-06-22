@@ -23,6 +23,12 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1);
             directionalLight2.position.set(-100, -100, -100).normalize();
             this.scene.add(directionalLight2);
+
+            // Tambahkan Sphere Merah raksasa sebagai penanda debug
+            const sphereGeo = new THREE.SphereGeometry(1, 32, 32); // radius 1 unit (karena akan di-scale)
+            const sphereMat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: false });
+            this.debugSphere = new THREE.Mesh(sphereGeo, sphereMat);
+            this.scene.add(this.debugSphere);
             
             this.mixer = null;
             this.model = null;

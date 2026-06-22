@@ -2,13 +2,19 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 
-const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList, showTrailLayer = true, showPoiLayer = true, importedRoute }) => {
+const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList, showTrailLayer = true, showPoiLayer = true, importedRoute, importedPhotos = [] }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const activePopupRef = useRef(null);
   const userMarkerRef = useRef(null);
+  const photoMarkersRef = useRef([]);
+  const importedPhotosRef = useRef(importedPhotos);
   const [profileData, setProfileData] = useState([]);
   const poiListRef = useRef(poiList);
+
+  useEffect(() => {
+    importedPhotosRef.current = importedPhotos;
+  }, [importedPhotos]);
 
   useEffect(() => {
     poiListRef.current = poiList;
@@ -32,6 +38,41 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
       map.current.setLayoutProperty('poi-layer', 'visibility', showPoiLayer ? 'visible' : 'none');
     }
   }, [showPoiLayer]);
+
+  // Efek untuk merender marker foto-foto yang diimpor
+  useEffect(() => {
+    if (!map.current) return;
+    
+    // Hapus marker lama
+    photoMarkersRef.current.forEach(marker => marker.remove());
+    photoMarkersRef.current = [];
+
+    // Tambahkan marker baru
+    importedPhotos.forEach(photo => {
+      const el = document.createElement('div');
+      el.className = 'imported-photo-marker';
+      el.style.width = '24px';
+      el.style.height = '24px';
+      el.style.borderRadius = '50%';
+      el.style.border = '2px solid #6ee7b7';
+      el.style.background = `#1e293b url('${photo.url}') center/cover no-repeat`;
+      el.style.boxShadow = '0 0 10px rgba(110, 231, 183, 0.6)';
+      el.style.cursor = 'pointer';
+
+      // Klik marker foto -> tampilkan popup
+      el.addEventListener('click', () => {
+        if (window.mapConsole && window.mapConsole.showPhotoPopup) {
+          window.mapConsole.showPhotoPopup(photo);
+        }
+      });
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([photo.lng, photo.lat])
+        .addTo(map.current);
+        
+      photoMarkersRef.current.push(marker);
+    });
+  }, [importedPhotos]);
 
   // Efek untuk menggambar rute yang di-import
   useEffect(() => {
@@ -426,6 +467,39 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
         activePopupRef.current = popup;
       };
 
+      const showPhotoPopup = (photo) => {
+        if (activePopupRef.current) {
+          if (activePopupRef.current.photoId === photo.id) return;
+          activePopupRef.current.remove();
+        }
+        
+        const popup = new maplibregl.Popup({ offset: [0, -25], closeButton: false })
+          .setLngLat([photo.lng, photo.lat])
+          .setHTML(`
+            <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(110, 231, 183, 0.4); border-radius: 12px; overflow: hidden; width: 220px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); font-family: Inter, sans-serif; backdrop-filter: blur(8px);">
+              <div style="width: 100%; height: 160px; background: #1e293b url('${photo.url}') center/cover no-repeat; position: relative;">
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 60%; background: linear-gradient(to top, rgba(15, 23, 42, 1), transparent);"></div>
+              </div>
+              <div style="padding: 12px 16px;">
+                <h3 style="margin: 0 0 4px 0; font-size: 14px; color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${photo.name}</h3>
+                <div style="display: flex; align-items: center; gap: 6px; color: #94a3b8; font-size: 12px; margin-bottom: 8px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="min-width: 12px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  Moments
+                </div>
+                <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin-bottom: 8px;"></div>
+                <div style="font-size: 11px; color: #6ee7b7; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">${new Date(photo.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+              </div>
+            </div>
+          `)
+          .addTo(map.current);
+          
+        popup.photoId = photo.id;
+        activePopupRef.current = popup;
+      };
+      
+      if (!window.mapConsole) window.mapConsole = {};
+      window.mapConsole.showPhotoPopup = showPhotoPopup;
+
       // Popup klik POI
       map.current.on('click', 'poi-layer', (e) => {
         const coordinates = e.features[0].geometry.coordinates.slice();
@@ -615,7 +689,33 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     if (closestPoi) {
                       showPoiPopup(closestPoi.name, closestPoi.jalur || 'Ranu Pane', [closestPoi.lng, closestPoi.lat]);
                     } else {
-                      if (activePopupRef.current) {
+                      if (activePopupRef.current && activePopupRef.current.poiName) {
+                        activePopupRef.current.remove();
+                        activePopupRef.current = null;
+                      }
+                    }
+                  }
+                } else {
+                  // Cek Foto terdekat (hanya untuk navigasi data/impor)
+                  const photos = importedPhotosRef.current;
+                  if (photos && photos.length > 0) {
+                    const currentTurfPt = turf.point([pt.lng, pt.lat]);
+                    let closestPhoto = null;
+                    let minDistance = 0.05; // Radius 50 meter (0.05 km)
+                    
+                    photos.forEach(photo => {
+                      const photoTurfPt = turf.point([photo.lng, photo.lat]);
+                      const dist = turf.distance(currentTurfPt, photoTurfPt, { units: 'kilometers' });
+                      if (dist < minDistance) {
+                        minDistance = dist;
+                        closestPhoto = photo;
+                      }
+                    });
+                    
+                    if (closestPhoto) {
+                      showPhotoPopup(closestPhoto);
+                    } else {
+                      if (activePopupRef.current && activePopupRef.current.photoId) {
                         activePopupRef.current.remove();
                         activePopupRef.current = null;
                       }

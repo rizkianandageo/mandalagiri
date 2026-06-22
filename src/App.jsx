@@ -2,10 +2,11 @@ import React, { useEffect, useState, useRef } from 'react';
 import MapComponent from './components/MapComponent';
 import ElevationProfile from './components/ElevationProfile';
 import LandingPage from './components/LandingPage';
-import { Mountain, Map, MapPin, Target, CloudRain, Sun, Wind, Cloud, Play, Square, Rewind, FastForward, Activity, ChevronUp, ChevronDown, Upload, Watch, Info, Trash2 } from 'lucide-react';
+import { Mountain, Map, MapPin, Target, CloudRain, Sun, Wind, Cloud, Play, Square, Rewind, FastForward, Activity, ChevronUp, ChevronDown, Upload, Watch, Info, Trash2, ImagePlus } from 'lucide-react';
 import './index.css';
 import { parseActivityFile } from './utils/garminParser';
 import ActivityBanner from './components/ActivityBanner';
+import exifr from 'exifr';
 
 function App() {
   const [hasStarted, setHasStarted] = useState(false);
@@ -30,8 +31,53 @@ function App() {
   const [showTrailLayer, setShowTrailLayer] = useState(true);
   const [showPoiLayer, setShowPoiLayer] = useState(true);
   const [importedRoute, setImportedRoute] = useState(null);
+  const [importedPhotos, setImportedPhotos] = useState([]);
   const [showActivityBanner, setShowActivityBanner] = useState(false);
   const fileInputRef = useRef(null);
+  const photoInputRef = useRef(null);
+
+  const handlePhotoUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    
+    // Clear input value so same files can be selected again
+    e.target.value = '';
+    
+    const newPhotos = [];
+    let noGpsCount = 0;
+    
+    for (const file of files) {
+      try {
+        const exifData = await exifr.parse(file, { gps: true, tiff: true });
+        if (exifData && exifData.latitude != null && exifData.longitude != null) {
+          newPhotos.push({
+            id: Date.now() + Math.random(),
+            name: file.name,
+            url: URL.createObjectURL(file),
+            lat: exifData.latitude,
+            lng: exifData.longitude,
+            // Fallback ke file.lastModified jika DateTimeOriginal kosong
+            timestamp: exifData.DateTimeOriginal ? exifData.DateTimeOriginal.getTime() : file.lastModified
+          });
+        } else {
+          noGpsCount++;
+        }
+      } catch (err) {
+        console.error('Gagal membaca EXIF foto', file.name, err);
+        noGpsCount++;
+      }
+    }
+    
+    if (newPhotos.length > 0) {
+      // Urutkan berdasarkan waktu (opsional tapi disarankan)
+      newPhotos.sort((a, b) => a.timestamp - b.timestamp);
+      setImportedPhotos(prev => [...prev, ...newPhotos]);
+    }
+    
+    if (noGpsCount > 0) {
+      alert(`${noGpsCount} foto dilewati karena tidak memiliki informasi lokasi GPS pada EXIF.`);
+    }
+  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -396,6 +442,7 @@ function App() {
           showTrailLayer={showTrailLayer}
           showPoiLayer={showPoiLayer}
           importedRoute={importedRoute}
+          importedPhotos={importedPhotos}
         />
       
       {/* HUD: Top Bar */}
@@ -410,12 +457,21 @@ function App() {
             Mandalagiri
           </h1>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {/* File Inputs Tersembunyi */}
             <input 
               type="file" 
               ref={fileInputRef} 
               style={{ display: 'none' }} 
-              accept=".gpx,.tcx,.fit,*/*" 
-              onChange={handleFileUpload} 
+              accept=".gpx,.fit,.tcx"
+              onChange={handleFileUpload}
+            />
+            <input 
+              type="file" 
+              ref={photoInputRef} 
+              style={{ display: 'none' }} 
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
             />
 
             {/* Switch Mountain Dropdown */}
@@ -699,7 +755,21 @@ function App() {
             </button>
             <div style={{ width: '1px', background: 'rgba(34, 211, 238, 0.3)', height: '16px' }}></div>
             <button 
-              onClick={() => { if(!isSimulating) { setImportedRoute(null); setShowActivityBanner(false); } }}
+              onClick={() => !isSimulating && photoInputRef.current && photoInputRef.current.click()}
+              style={{ 
+                background: 'transparent', border: 'none', color: '#6ee7b7', padding: '8px 12px', 
+                cursor: isSimulating ? 'not-allowed' : 'pointer', 
+                display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'inherit', fontWeight: 'inherit', textTransform: 'inherit',
+                opacity: isSimulating ? 0.3 : 1
+              }}
+              title="Add Photos"
+              disabled={isSimulating}
+            >
+              <ImagePlus size={14} /> Add Photos ({importedPhotos.length})
+            </button>
+            <div style={{ width: '1px', background: 'rgba(34, 211, 238, 0.3)', height: '16px' }}></div>
+            <button 
+              onClick={() => { if(!isSimulating) { setImportedRoute(null); setImportedPhotos([]); setShowActivityBanner(false); } }}
               style={{ 
                 background: 'transparent', border: 'none', color: '#fca5a5', padding: '8px 12px', 
                 cursor: isSimulating ? 'not-allowed' : 'pointer', 

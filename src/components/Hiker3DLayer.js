@@ -84,9 +84,10 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             let elevation = 0;
             if (this.map.queryTerrainElevation) {
                 const terrainElev = this.map.queryTerrainElevation(lngLat) || 0;
-                // Tambahkan offset agar model berada di ATAS terrain, tidak menembus
-                // Offset dalam meter — disesuaikan dengan tinggi model (modelSizeMeters)
-                const elevationOffset = 30; // meter di atas terrain
+                // Model GLB umumnya memiliki pivot/origin di tengah badan (bukan di kaki),
+                // sehingga perlu offset = setengah tinggi model agar kaki tepat di atas terrain.
+                // modelSizeMeters = 200m → half = 100m, tambah buffer 20m → offset = 120m
+                const elevationOffset = 120; // meter di atas terrain
                 elevation = terrainElev + elevationOffset;
             }
 

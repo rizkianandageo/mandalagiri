@@ -577,6 +577,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
           
           // Fungsi Fly-Through
           let flyAnimationId = null;
+          let flyTimeoutId = null;
           let isFlying = false;
           let hikerMarker = null;
 
@@ -594,181 +595,195 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             let lastTime = 0;
             const isImported = !!window.mapConsole.importedSimulationData;
             
-            // Target durasi disamakan: 15 detik (normal) untuk default, dan 5 detik (super timelapse) untuk impor
-            const targetDurationMs = isImported ? 5000 : 15000;
-            // Anggap 60fps (~16ms per frame)
-            const totalFrames = targetDurationMs / 16;
-            const stepSize = Math.max(0.1, activeData.length / totalFrames);
+            // PRE-FLY TO START (Beri waktu MapLibre meload tile terrain resolusi tinggi)
+            const startPt = activeData[startIdx];
+            map.current.flyTo({
+              center: [startPt.lng, startPt.lat],
+              zoom: 13.2,
+              pitch: 45,
+              bearing: map.current.getBearing(),
+              duration: 1000
+            });
 
-            // Buat elemen kustom untuk marker pendaki
-            const el = document.createElement('div');
-            el.className = 'hiker-marker';
-            el.style.width = '32px';
-            el.style.height = '32px';
-            el.style.background = '#ffffff';
-            el.style.borderRadius = '50%';
-            el.style.border = '2px solid var(--accent)';
-            el.style.display = 'flex';
-            el.style.alignItems = 'center';
-            el.style.justifyContent = 'center';
-            el.style.fontSize = '20px';
-            el.style.boxShadow = '0 0 15px rgba(34, 211, 238, 0.6)';
-            el.innerHTML = '🚶';
+            // Mulai simulasi setelah terbang selesai & tile dimuat
+            flyTimeoutId = setTimeout(() => {
+              // Target durasi disamakan: 15 detik (normal) untuk default, dan 5 detik (super timelapse) untuk impor
+              const targetDurationMs = isImported ? 5000 : 15000;
+              // Anggap 60fps (~16ms per frame)
+              const totalFrames = targetDurationMs / 16;
+              const stepSize = Math.max(0.1, activeData.length / totalFrames);
 
-            hikerMarker = new maplibregl.Marker({ element: el })
-              .setLngLat([activeData[startIdx].lng, activeData[startIdx].lat])
-              .addTo(map.current);
+              // Buat elemen kustom untuk marker pendaki
+              const el = document.createElement('div');
+              el.className = 'hiker-marker';
+              el.style.width = '32px';
+              el.style.height = '32px';
+              el.style.background = '#ffffff';
+              el.style.borderRadius = '50%';
+              el.style.border = '2px solid var(--accent)';
+              el.style.display = 'flex';
+              el.style.alignItems = 'center';
+              el.style.justifyContent = 'center';
+              el.style.fontSize = '20px';
+              el.style.boxShadow = '0 0 15px rgba(34, 211, 238, 0.6)';
+              el.innerHTML = '🚶';
 
-            let currentBearing = map.current.getBearing();
-            let lastTickTime = 0;
-            let pausedUntil = 0;
-            const shownItems = new Set();
+              hikerMarker = new maplibregl.Marker({ element: el })
+                .setLngLat([activeData[startIdx].lng, activeData[startIdx].lat])
+                .addTo(map.current);
 
-            const animate = (time) => {
-              if (!isFlying) return;
-              
-              // Jeda animasi saat popup foto/checkpoint muncul
-              if (time < pausedUntil) {
+              let currentBearing = map.current.getBearing();
+              let lastTickTime = 0;
+              let pausedUntil = 0;
+              const shownItems = new Set();
+
+              const animate = (time) => {
+                if (!isFlying) return;
+                
+                // Jeda animasi saat popup foto/checkpoint muncul
+                if (time < pausedUntil) {
+                  flyAnimationId = requestAnimationFrame(animate);
+                  return;
+                }
+
+                if (Math.floor(i) >= endIdx) {
+                  window.mapConsole.stopFlyThrough();
+                  return;
+                }
+
+                // Update konstan 60fps (tiap ~16ms)
+                if (time - lastTime >= 16) {
+                  const currentIndex = Math.floor(i);
+                  const nextIndex = Math.min(currentIndex + 1, activeData.length - 1);
+                  const frac = i - currentIndex;
+                  
+                  const pt1 = activeData[currentIndex];
+                  const pt2 = activeData[nextIndex];
+                  
+                  // Interpolasi koordinat untuk pergerakan sangat halus (smooth cinematic)
+                  const interpLng = pt1.lng + (pt2.lng - pt1.lng) * frac;
+                  const interpLat = pt1.lat + (pt2.lat - pt1.lat) * frac;
+                  const interpDistance = pt1.distance + (pt2.distance - pt1.distance) * frac;
+                  const interpTime = pt1.cumulative_time + (pt2.cumulative_time - pt1.cumulative_time) * frac;
+
+                  const startPt = activeData[startIdx];
+                  const offsetPt = {
+                    ...pt1, // Bawa elevasi & slope dari pt1
+                    lng: interpLng,
+                    lat: interpLat,
+                    originalDistance: interpDistance,
+                    distance: interpDistance - startPt.distance,
+                    cumulative_time: interpTime - startPt.cumulative_time
+                  };
+
+                  hikerMarker.setLngLat([interpLng, interpLat]);
+
+                  let targetBearing = currentBearing;
+                  // Look-ahead menengah agar tidak terlalu lambat atau terlalu responsif
+                  const lookAheadIndex = Math.min(currentIndex + 15, activeData.length - 1);
+                  const nextPt = activeData[lookAheadIndex];
+                  
+                  if (nextPt) {
+                    const p1 = turf.point([interpLng, interpLat]);
+                    const p2 = turf.point([nextPt.lng, nextPt.lat]);
+                    targetBearing = turf.bearing(p1, p2);
+                  }
+
+                  let diff = targetBearing - currentBearing;
+                  diff = ((diff + 180) % 360) - 180;
+                  // Smoothing rotasi kamera
+                  currentBearing += diff * 0.05;
+
+                  // Gunakan jumpTo pada 60fps dengan pitch dan zoom yang jauh lebih aman (Drone View Tinggi)
+                  // Ini mencegah kamera menabrak (clipping) gunung 3D yang menyebabkan map/icon/popup hilang.
+                  map.current.jumpTo({
+                    center: [interpLng, interpLat],
+                    bearing: currentBearing,
+                    pitch: 45,
+                    zoom: 13.2
+                  });
+
+                  // Cek POI terdekat (hanya untuk simulasi navigasi rute asli)
+                  if (!isImported) {
+                    const currentPoiList = poiListRef.current;
+                    if (currentPoiList && currentPoiList.length > 0) {
+                      const currentTurfPt = turf.point([offsetPt.lng, offsetPt.lat]);
+                      let closestPoi = null;
+                      let minDistance = 0.05; // Radius 50 meter (0.05 km)
+                      
+                      currentPoiList.forEach(poi => {
+                        const poiTurfPt = turf.point([poi.lng, poi.lat]);
+                        const dist = turf.distance(currentTurfPt, poiTurfPt, { units: 'kilometers' });
+                        if (dist < minDistance) {
+                          minDistance = dist;
+                          closestPoi = poi;
+                        }
+                      });
+                      
+                      if (closestPoi) {
+                        showPoiPopup(closestPoi.name, closestPoi.jalur || 'Ranu Pane', [closestPoi.lng, closestPoi.lat]);
+                        if (!shownItems.has('poi_' + closestPoi.name)) {
+                          shownItems.add('poi_' + closestPoi.name);
+                          pausedUntil = time + 2500; // Pause 2.5s
+                        }
+                      } else {
+                        if (activePopupRef.current && activePopupRef.current.poiName) {
+                          activePopupRef.current.remove();
+                          activePopupRef.current = null;
+                        }
+                      }
+                    }
+                  } else {
+                    // Cek Foto terdekat (hanya untuk navigasi data/impor)
+                    const photos = importedPhotosRef.current;
+                    if (photos && photos.length > 0) {
+                      const currentTurfPt = turf.point([offsetPt.lng, offsetPt.lat]);
+                      let closestPhoto = null;
+                      let minDistance = 0.05; // Radius 50 meter (0.05 km)
+                      
+                      photos.forEach(photo => {
+                        const photoTurfPt = turf.point([photo.lng, photo.lat]);
+                        const dist = turf.distance(currentTurfPt, photoTurfPt, { units: 'kilometers' });
+                        if (dist < minDistance) {
+                          minDistance = dist;
+                          closestPhoto = photo;
+                        }
+                      });
+                      
+                      if (closestPhoto) {
+                        showPhotoPopup(closestPhoto);
+                        if (!shownItems.has('photo_' + closestPhoto.id)) {
+                          shownItems.add('photo_' + closestPhoto.id);
+                          pausedUntil = time + 2500; // Pause 2.5s
+                        }
+                      } else {
+                        if (activePopupRef.current && activePopupRef.current.photoId) {
+                          activePopupRef.current.remove();
+                          activePopupRef.current = null;
+                        }
+                      }
+                    }
+                  }
+
+                  // Kirim data telemetri real-time ke HUD (Throttled max 10fps agar tidak memblokir state React)
+                  if (time - lastTickTime > 100) {
+                    window.dispatchEvent(new CustomEvent('simulation-tick', {
+                      detail: offsetPt
+                    }));
+                    lastTickTime = time;
+                  }
+                  
+                  i += stepSize;
+                  lastTime = time;
+                }
                 flyAnimationId = requestAnimationFrame(animate);
-                return;
-              }
-
-              if (Math.floor(i) >= endIdx) {
-                window.mapConsole.stopFlyThrough();
-                return;
-              }
-
-              // Update konstan 60fps (tiap ~16ms)
-              if (time - lastTime >= 16) {
-                const currentIndex = Math.floor(i);
-                const nextIndex = Math.min(currentIndex + 1, activeData.length - 1);
-                const frac = i - currentIndex;
-                
-                const pt1 = activeData[currentIndex];
-                const pt2 = activeData[nextIndex];
-                
-                // Interpolasi koordinat untuk pergerakan sangat halus (smooth cinematic)
-                const interpLng = pt1.lng + (pt2.lng - pt1.lng) * frac;
-                const interpLat = pt1.lat + (pt2.lat - pt1.lat) * frac;
-                const interpDistance = pt1.distance + (pt2.distance - pt1.distance) * frac;
-                const interpTime = pt1.cumulative_time + (pt2.cumulative_time - pt1.cumulative_time) * frac;
-
-                const startPt = activeData[startIdx];
-                const offsetPt = {
-                  ...pt1, // Bawa elevasi & slope dari pt1
-                  lng: interpLng,
-                  lat: interpLat,
-                  originalDistance: interpDistance,
-                  distance: interpDistance - startPt.distance,
-                  cumulative_time: interpTime - startPt.cumulative_time
-                };
-
-                hikerMarker.setLngLat([interpLng, interpLat]);
-
-                let targetBearing = currentBearing;
-                // Look-ahead menengah agar tidak terlalu lambat atau terlalu responsif
-                const lookAheadIndex = Math.min(currentIndex + 15, activeData.length - 1);
-                const nextPt = activeData[lookAheadIndex];
-                
-                if (nextPt) {
-                  const p1 = turf.point([interpLng, interpLat]);
-                  const p2 = turf.point([nextPt.lng, nextPt.lat]);
-                  targetBearing = turf.bearing(p1, p2);
-                }
-
-                let diff = targetBearing - currentBearing;
-                diff = ((diff + 180) % 360) - 180;
-                // Smoothing rotasi kamera
-                currentBearing += diff * 0.05;
-
-                // Gunakan jumpTo pada 60fps dengan pitch dan zoom yang jauh lebih aman (Drone View Tinggi)
-                // Ini mencegah kamera menabrak (clipping) gunung 3D yang menyebabkan map/icon/popup hilang.
-                map.current.jumpTo({
-                  center: [interpLng, interpLat],
-                  bearing: currentBearing,
-                  pitch: 45,
-                  zoom: 13.2
-                });
-
-                // Cek POI terdekat (hanya untuk simulasi navigasi rute asli)
-                if (!isImported) {
-                  const currentPoiList = poiListRef.current;
-                  if (currentPoiList && currentPoiList.length > 0) {
-                    const currentTurfPt = turf.point([offsetPt.lng, offsetPt.lat]);
-                    let closestPoi = null;
-                    let minDistance = 0.05; // Radius 50 meter (0.05 km)
-                    
-                    currentPoiList.forEach(poi => {
-                      const poiTurfPt = turf.point([poi.lng, poi.lat]);
-                      const dist = turf.distance(currentTurfPt, poiTurfPt, { units: 'kilometers' });
-                      if (dist < minDistance) {
-                        minDistance = dist;
-                        closestPoi = poi;
-                      }
-                    });
-                    
-                    if (closestPoi) {
-                      showPoiPopup(closestPoi.name, closestPoi.jalur || 'Ranu Pane', [closestPoi.lng, closestPoi.lat]);
-                      if (!shownItems.has('poi_' + closestPoi.name)) {
-                        shownItems.add('poi_' + closestPoi.name);
-                        pausedUntil = time + 2500; // Pause 2.5s
-                      }
-                    } else {
-                      if (activePopupRef.current && activePopupRef.current.poiName) {
-                        activePopupRef.current.remove();
-                        activePopupRef.current = null;
-                      }
-                    }
-                  }
-                } else {
-                  // Cek Foto terdekat (hanya untuk navigasi data/impor)
-                  const photos = importedPhotosRef.current;
-                  if (photos && photos.length > 0) {
-                    const currentTurfPt = turf.point([offsetPt.lng, offsetPt.lat]);
-                    let closestPhoto = null;
-                    let minDistance = 0.05; // Radius 50 meter (0.05 km)
-                    
-                    photos.forEach(photo => {
-                      const photoTurfPt = turf.point([photo.lng, photo.lat]);
-                      const dist = turf.distance(currentTurfPt, photoTurfPt, { units: 'kilometers' });
-                      if (dist < minDistance) {
-                        minDistance = dist;
-                        closestPhoto = photo;
-                      }
-                    });
-                    
-                    if (closestPhoto) {
-                      showPhotoPopup(closestPhoto);
-                      if (!shownItems.has('photo_' + closestPhoto.id)) {
-                        shownItems.add('photo_' + closestPhoto.id);
-                        pausedUntil = time + 2500; // Pause 2.5s
-                      }
-                    } else {
-                      if (activePopupRef.current && activePopupRef.current.photoId) {
-                        activePopupRef.current.remove();
-                        activePopupRef.current = null;
-                      }
-                    }
-                  }
-                }
-
-                // Kirim data telemetri real-time ke HUD (Throttled max 10fps agar tidak memblokir state React)
-                if (time - lastTickTime > 100) {
-                  window.dispatchEvent(new CustomEvent('simulation-tick', {
-                    detail: offsetPt
-                  }));
-                  lastTickTime = time;
-                }
-                
-                i += stepSize;
-                lastTime = time;
-              }
+              };
               flyAnimationId = requestAnimationFrame(animate);
-            };
-            flyAnimationId = requestAnimationFrame(animate);
+            }, 1500);
           };
           
           window.mapConsole.stopFlyThrough = () => {
+            if(flyTimeoutId) clearTimeout(flyTimeoutId);
             if(flyAnimationId) cancelAnimationFrame(flyAnimationId);
             isFlying = false;
             if(hikerMarker) {

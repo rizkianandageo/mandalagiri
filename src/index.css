@@ -1404,15 +1404,15 @@ body {
 @media (max-width: 768px) {
   body.is-imported-route:not(.profile-minimized) .maplibregl-ctrl-bottom-right,
   body.is-imported-route:not(.profile-minimized) .maplibregl-ctrl-bottom-left {
-    bottom: 310px !important;
+    bottom: 350px !important;
   }
   
   body.is-imported-route:not(.profile-minimized) .import-data-floating {
-    bottom: 320px !important;
+    bottom: 360px !important;
   }
   
   body.is-imported-route:not(.profile-minimized) .layer-legend-panel {
-    bottom: 355px !important;
+    bottom: 395px !important;
   }
 }
 

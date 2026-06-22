@@ -17,7 +17,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
   // Efek untuk menyembunyikan/menampilkan layer jalur
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
-    const trailLayers = ['jalur-slope-line', 'jalur-slope-glow'];
+    const trailLayers = ['jalur-slope-line', 'jalur-slope-glow', 'imported-route-line', 'imported-route-glow'];
     trailLayers.forEach(layer => {
       if (map.current.getLayer(layer)) {
         map.current.setLayoutProperty(layer, 'visibility', showTrailLayer ? 'visible' : 'none');
@@ -549,6 +549,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
               .addTo(map.current);
 
             let currentBearing = map.current.getBearing();
+            let lastTickTime = 0;
 
             const animate = (time) => {
               if (!isFlying) return;
@@ -620,10 +621,13 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   }
                 }
 
-                // Kirim data telemetri real-time ke HUD
-                window.dispatchEvent(new CustomEvent('simulation-tick', {
-                  detail: offsetPt
-                }));
+                // Kirim data telemetri real-time ke HUD (Throttled max 10fps agar tidak memblokir state React)
+                if (time - lastTickTime > 100) {
+                  window.dispatchEvent(new CustomEvent('simulation-tick', {
+                    detail: offsetPt
+                  }));
+                  lastTickTime = time;
+                }
                 
                 i += stepSize;
                 lastTime = time;

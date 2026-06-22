@@ -706,7 +706,7 @@ function App() {
       <div className={`layer-legend-panel ${isProfileMinimized ? 'minimized' : ''}`}>
         <div 
           className="legend-item"
-          onClick={() => setShowTrailLayer(!showTrailLayer)}
+          onClick={() => setShowTrailLayer(prev => !prev)}
           style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', opacity: showTrailLayer ? 1 : 0.5, transition: 'opacity 0.2s' }}
           title="Tampilkan/Sembunyikan Jalur Pendakian"
         >
@@ -715,7 +715,7 @@ function App() {
         </div>
         <div 
           className="legend-item"
-          onClick={() => setShowPoiLayer(!showPoiLayer)}
+          onClick={() => setShowPoiLayer(prev => !prev)}
           style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', opacity: showPoiLayer ? 1 : 0.5, transition: 'opacity 0.2s' }}
           title="Tampilkan/Sembunyikan Point of Interest"
         >

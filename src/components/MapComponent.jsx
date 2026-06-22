@@ -669,7 +669,8 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                 hikerMarker.setLngLat([interpLng, interpLat]);
 
                 let targetBearing = currentBearing;
-                const lookAheadIndex = Math.min(currentIndex + 10, activeData.length - 1);
+                // Look-ahead lebih jauh agar kamera tidak gampang oleng
+                const lookAheadIndex = Math.min(currentIndex + 30, activeData.length - 1);
                 const nextPt = activeData[lookAheadIndex];
                 
                 if (nextPt) {
@@ -680,15 +681,15 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
 
                 let diff = targetBearing - currentBearing;
                 diff = ((diff + 180) % 360) - 180;
-                currentBearing += diff * 0.1;
+                // Rotasi kamera sangat lambat & smooth (Cinematic drone)
+                currentBearing += diff * 0.02;
 
-                // Gunakan jumpTo pada 60fps menghasilkan efek timelapse mulus dan tidak ngelag
+                // Gunakan jumpTo pada 60fps
                 map.current.jumpTo({
                   center: [interpLng, interpLat],
                   bearing: currentBearing,
-                  pitch: 75,
-                  zoom: 15.8,
-                  padding: { bottom: 250 }
+                  pitch: 60,
+                  zoom: 14.5
                 });
 
                 // Cek POI terdekat (hanya untuk simulasi navigasi rute asli)

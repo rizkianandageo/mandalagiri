@@ -84,11 +84,8 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             let elevation = 0;
             if (this.map.queryTerrainElevation) {
                 const terrainElev = this.map.queryTerrainElevation(lngLat) || 0;
-                // Model GLB ini memiliki kaki di +Y dan kepala di -Y (non-standard Y-up).
-                // Setelah RotationX(-PI/2), kaki (+Y GLTF) → -Z MapLibre (ke bawah/terrain).
-                // Origin model diasumsikan di tengah → kaki sejauh 100m di bawah origin.
-                // Offset = setengah tinggi model (100m) agar kaki tepat di permukaan terrain.
-                const elevationOffset = 100; // meter
+                // modelSizeMeters = 80m, origin di tengah model → offset = 40m (setengahnya)
+                const elevationOffset = 40; // meter
                 elevation = terrainElev + elevationOffset;
             }
 
@@ -98,8 +95,8 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             // meterInMercatorCoordinateUnits() = faktor konversi meter → Mercator units
             const meterScale = mercator.meterInMercatorCoordinateUnits();
 
-            // Ukuran visual model dalam meter (dibesarkan agar terlihat dari ketinggian)
-            const modelSizeMeters = 200;
+            // Ukuran visual model dalam meter — dikecilkan agar proporsional
+            const modelSizeMeters = 80;
             const scale = meterScale * modelSizeMeters;
 
             // ---------------------------------------------------------------
@@ -129,14 +126,26 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             // Model Transform Matrix (L): posisi, skala, rotasi
             // Model GLTF ini non-standard: kaki berada di +Y, kepala di -Y.
             // RotationX(-PI/2) memetakan GLTF +Y → MapLibre -Z (bawah/terrain) sehingga kaki ke bawah.
-            // RotationX(+PI/2) justru memetakan kaki ke +Z (atas/langit) → model terbalik.
             const rotationX = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
             const rotationZ = new THREE.Matrix4().makeRotationZ((bearing) * Math.PI / 180);
+
+            // COUNTER-PITCH ROTATION: Agar model selalu tampak tegak lurus di layar
+            // meski kamera MapLibre sedang dalam mode pitch/tilt (3D terrain view).
+            // Caranya: putar model berlawanan arah pitch kamera, menggunakan sumbu 
+            // "camera right" yang berputar mengikuti bearing.
+            const mapBearing = this.map.getBearing() || 0;
+            const mapPitch = this.map.getPitch() || 0;
+            const mapBearingRad = mapBearing * Math.PI / 180;
+            const mapPitchRad = mapPitch * Math.PI / 180;
+            // Sumbu pitch kamera (arah "kanan kamera" di Mercator world space)
+            const pitchAxis = new THREE.Vector3(Math.cos(mapBearingRad), Math.sin(mapBearingRad), 0);
+            const counterPitch = new THREE.Matrix4().makeRotationAxis(pitchAxis, mapPitchRad);
 
             const l = new THREE.Matrix4()
                 .makeTranslation(mercator.x, mercator.y, mercator.z)
                 .scale(new THREE.Vector3(scale, scale, scale))
                 .multiply(rotationX)
+                .multiply(counterPitch)
                 .multiply(rotationZ);
 
             // Set camera matrix = MVP dari MapLibre × Model transform

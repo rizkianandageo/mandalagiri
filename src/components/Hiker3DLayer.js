@@ -32,6 +32,12 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             const loader = new GLTFLoader();
             loader.load(modelUrl, (gltf) => {
                 this.model = gltf.scene;
+                // Cegah WebGL menghilangkan model yang dianggap di luar layar
+                this.model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.frustumCulled = false;
+                    }
+                });
                 this.scene.add(this.model);
                 
                 // Mainkan animasi pertama jika ada
@@ -86,9 +92,10 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             const m = new THREE.Matrix4().fromArray(matrix);
             
             // Buat matriks transformasi untuk posisi, skala, dan rotasi model
+            // HARUS menggunakan -scale pada sumbu Y karena MapLibre Mercator dan Three.js memiliki orientasi Y yang terbalik!
             const l = new THREE.Matrix4()
                 .makeTranslation(mercatorOrigin.x, mercatorOrigin.y, mercatorOrigin.z)
-                .scale(new THREE.Vector3(scale, scale, scale))
+                .scale(new THREE.Vector3(scale, -scale, scale))
                 // Sesuaikan sumbu Z (Heading) ke rotasi maplibre (-bearing)
                 .multiply(new THREE.Matrix4().makeRotationZ(-bearing * Math.PI / 180)) 
                 // Model GLTF umumnya menghadap Z+ dengan Y+ ke atas. 

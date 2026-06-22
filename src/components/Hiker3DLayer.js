@@ -85,12 +85,21 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             // Dinamiskan scale berdasarkan zoom level agar tetap terlihat saat zoom out
             const currentZoom = this.map.getZoom();
             const zoomScaleFactor = Math.pow(2, 14 - currentZoom); // 1 di zoom 14, membesar saat dizoom out
-            const visualSize = 1500 * Math.max(1, zoomScaleFactor); // Ukuran base 1500m di zoom <=14
+            
+            // Coba perbesar 100x lipat karena bisa jadi unit GLB aslinya berbentuk centimeter atau millimeter
+            const visualSize = 150000 * Math.max(1, zoomScaleFactor); // Ukuran super besar sementara untuk debug
             
             const scale = meterScale * visualSize;
 
             const m = new THREE.Matrix4().fromArray(matrix);
             
+            // Debugging log tiap ~60 frame
+            if (!this.frameCount) this.frameCount = 0;
+            this.frameCount++;
+            if (this.frameCount % 60 === 0) {
+                console.log("Hiker3D Debug: rendering model di", lngLat, "elevation:", elevation, "scale:", scale, "zoom:", currentZoom);
+            }
+
             // Buat matriks transformasi untuk posisi, skala, dan rotasi model
             // HARUS menggunakan -scale pada sumbu Y karena MapLibre Mercator dan Three.js memiliki orientasi Y yang terbalik!
             const l = new THREE.Matrix4()

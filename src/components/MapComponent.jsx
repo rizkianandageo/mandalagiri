@@ -785,8 +785,10 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
 
                   // Gunakan jumpTo pada 60fps dengan pitch dan zoom yang jauh lebih aman (Drone View Tinggi)
                   // Ini mencegah kamera menabrak (clipping) gunung 3D yang menyebabkan map/icon/popup hilang.
+                  // KUNCI: Kamera HARUS mengikuti posisi hiker yang sudah di-smooth, bukan raw GPS interpolasi.
+                  // Jika kamera mengikuti raw GPS, layar akan bergetar dan icon pendaki terlihat seperti melompat maju-mundur.
                   map.current.jumpTo({
-                    center: [interpLng, interpLat],
+                    center: [hikerLng, hikerLat],
                     bearing: currentBearing,
                     pitch: 45,
                     zoom: 13.2,

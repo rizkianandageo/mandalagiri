@@ -52,8 +52,16 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
 
                 // Mainkan animasi pertama jika ada
                 if (gltf.animations && gltf.animations.length > 0) {
+                    console.log('Hiker3D: Ditemukan', gltf.animations.length, 'animasi:',
+                        gltf.animations.map(a => a.name).join(', '));
                     this.mixer = new THREE.AnimationMixer(this.model);
-                    this.mixer.clipAction(gltf.animations[0]).play();
+                    // Mixamo export biasanya nama animasinya "mixamo.com" atau sesuai nama yang dipilih
+                    const action = this.mixer.clipAction(gltf.animations[0]);
+                    action.setLoop(THREE.LoopRepeat); // loop tanpa henti
+                    action.play();
+                    console.log('Hiker3D: Memainkan animasi:', gltf.animations[0].name);
+                } else {
+                    console.warn('Hiker3D: Tidak ada animasi di file GLB ini!');
                 }
 
                 console.log('Hiker3D: Model GLB berhasil dimuat!');
@@ -152,13 +160,11 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             this.camera.projectionMatrix = m.multiply(l);
             this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
 
-            // Debug log setiap 60 frame
+            // Debug log setiap 300 frame (lebih jarang agar console tidak penuh)
             this.frameCount++;
-            if (this.frameCount % 60 === 0) {
+            if (this.frameCount % 300 === 0) {
                 const currentZoom = this.map.getZoom();
-                console.log('Hiker3D Debug: rendering model di', lngLat,
-                    'elevation:', elevation, 'scale:', scale, 'zoom:', currentZoom,
-                    'mercator:', mercator.x, mercator.y, mercator.z);
+                console.log('Hiker3D Debug: pos', lngLat, '| elev:', Math.round(elevation), 'm | zoom:', currentZoom.toFixed(1));
             }
 
             // Update animasi
@@ -174,10 +180,11 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             // Reset state WebGL Three.js agar tidak crash dengan state MapLibre
             this.renderer.resetState();
             this.renderer.render(this.scene, this.camera);
-            // Jangan restore state — biarkan MapLibre lanjut dengan state-nya sendiri
 
-            // Trigger repaint selama animasi berlangsung
-            if (window.mapConsole?.isFlying) {
+            // SELALU trigger repaint selama model aktif agar animasi walking terus smooth.
+            // Animasi mixer perlu dipanggil terus-menerus (bukan hanya saat isFlying)
+            // supaya loop berjalan mulus.
+            if (this.mixer) {
                 this.map.triggerRepaint();
             }
         }

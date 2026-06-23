@@ -621,8 +621,10 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
               let targetDurationMs = totalDistance / referenceSpeedKmPerMs;
               if (targetDurationMs < 5000) targetDurationMs = 5000; // Minimal 5 detik agar tidak terlalu instan
               
-              // Frame-rate independent: Poin yang dilewati per ms
-              const pointsPerMs = (endIdx - startIdx) / targetDurationMs;
+              // Frame-rate independent: Jarak yang dilewati per ms
+              const speedDistPerMs = totalDistance / targetDurationMs;
+              let currentSimDistance = activeData[startIdx].distance;
+              let currentK = startIdx;
 
               // Tambahkan Hiker 3D Layer
               if (!map.current.getLayer('hiker-3d-model')) {
@@ -667,7 +669,20 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                 const safeDt = Math.min(dt, 100);
 
                 if (safeDt > 0) {
-                  i += pointsPerMs * safeDt;
+                  // Interpolasi berbasis JARAK, bukan indeks! Ini menyelesaikan glitch kecepatan 
+                  // maju-mundur/stuttering karena jarak antar titik GPS tidak konstan.
+                  currentSimDistance += speedDistPerMs * safeDt;
+                  
+                  while (currentK < endIdx && activeData[currentK + 1].distance < currentSimDistance) {
+                      currentK++;
+                  }
+                  
+                  if (currentK >= endIdx) {
+                      i = endIdx;
+                  } else {
+                      const segDist = activeData[currentK + 1].distance - activeData[currentK].distance;
+                      i = segDist > 0 ? currentK + (currentSimDistance - activeData[currentK].distance) / segDist : currentK;
+                  }
                   
                   const currentIndex = Math.floor(i);
                   if (currentIndex >= activeData.length - 1) {

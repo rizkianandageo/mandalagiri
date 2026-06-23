@@ -996,8 +996,21 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                if (window.mapConsole.baseImportedGeojson) {
                  try {
                    const bbox = turf.bbox(window.mapConsole.baseImportedGeojson);
+                   
+                   // Dapatkan tinggi/lebar layar agar padding tidak pernah lebih besar dari canvas
+                   const mapHeight = map.current.getContainer().clientHeight || window.innerHeight;
+                   const mapWidth = map.current.getContainer().clientWidth || window.innerWidth;
+                   
+                   // Dynamic padding:
+                   // Maksimal 400px untuk bottom (untuk Elevation profile sheet) atau 45% dari tinggi layar
+                   // Maksimal 120px untuk top (untuk top UI info) atau 15% dari tinggi layar
+                   // Maksimal 50px untuk samping atau 10% dari lebar layar
+                   const bottomPad = Math.min(400, mapHeight * 0.45);
+                   const topPad = Math.min(120, mapHeight * 0.15);
+                   const sidePad = Math.min(50, mapWidth * 0.1);
+
                    map.current.fitBounds(bbox, {
-                     padding: { top: 120, bottom: 400, left: 50, right: 50 },
+                     padding: { top: topPad, bottom: bottomPad, left: sidePad, right: sidePad },
                      pitch: 0,
                      bearing: 0,
                      duration: 2500 // Durasi animasi zoom out lebih smooth

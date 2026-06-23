@@ -134,26 +134,30 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             // Model bearing = targetBearing (arah jalur aktual, bukan camera bearing yang smoothed)
             const bearing = window.mapConsole?.hiker3DRotation || 0;
 
-            // Dapatkan elevasi terrain di titik model
-            // KUNCI: Harus menggunakan queryTerrainElevation agar model tidak amblas ke dalam tanah 
-            // karena perbedaan data elevasi GPS vs DEM MapLibre.
-            // Untuk menghindari efek "staircase" (tangga) dari Terrain RGB, kita gunakan Low-Pass Filter (EMA).
-            let rawElevation = 0;
-            if (this.map.queryTerrainElevation) {
-                rawElevation = this.map.queryTerrainElevation(lngLat) || 0;
+            // Dapatkan elevasi untuk menempatkan model di atas terrain
+            // STRATEGI: Gunakan elevasi GPS + offset kalibrasi jika tersedia.
+            // Elevasi GPS sudah diinterpolasi sempurna (tidak ada staircase/tangga).
+            // Offset kalibrasi mengoreksi perbedaan datum GPS vs DEM MapLibre.
+            // Fallback: queryTerrainElevation dengan EMA jika data GPS tidak ada.
+            let elevation = 0;
+            const hiker3DElevation = window.mapConsole?.hiker3DElevation;
+            const elevOffset = window.mapConsole?.hiker3DElevationOffset ?? 0;
+            
+            if (hiker3DElevation !== undefined && hiker3DElevation !== null) {
+                // Gunakan GPS elevation yang sudah dikalibrasi
+                elevation = hiker3DElevation + elevOffset;
+            } else {
+                // Fallback: queryTerrainElevation dengan EMA smoothing
+                let rawElevation = 0;
+                if (this.map.queryTerrainElevation) {
+                    rawElevation = this.map.queryTerrainElevation(lngLat) || 0;
+                }
+                if (this.currentElevation === undefined) {
+                    this.currentElevation = rawElevation;
+                }
+                this.currentElevation += (rawElevation - this.currentElevation) * 0.15;
+                elevation = this.currentElevation;
             }
-            
-            // Inisialisasi elevasi pertama kali agar tidak mulai dari 0
-            if (this.currentElevation === undefined) {
-                this.currentElevation = rawElevation;
-            }
-            
-            // EMA (Exponential Moving Average) Smoothing Factor. 
-            // 0.15 artinya 15% menuju target per frame - responsif tapi tetap mulus.
-            const smoothFactor = 0.15; 
-            this.currentElevation += (rawElevation - this.currentElevation) * smoothFactor;
-            
-            let elevation = this.currentElevation;
 
             // Konversi ke Mercator koordinat dengan elevasi
             const mercator = maplibregl.MercatorCoordinate.fromLngLat(lngLat, elevation);

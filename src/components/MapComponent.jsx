@@ -636,6 +636,18 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                 const hikerLayer = createHiker3DLayer(map.current, `${import.meta.env.BASE_URL}models/sierra_the_trailblazer.glb`);
                 map.current.addLayer(hikerLayer);
               }
+              // --- KALIBRASI ELEVASI GPS vs DEM MAPLIBRE ---
+              // Hitung offset koreksi sekali di awal animasi:
+              // GPS elevation dan DEM MapLibre menggunakan datum yang sedikit berbeda.
+              // Dengan mengukur selisihnya di titik awal, kita bisa menerapkan koreksi
+              // ke seluruh animasi agar model selalu melekat sempurna di permukaan gunung.
+              const startGPSElev = activeData[startIdx].elevation || 0;
+              const startTerrainElev = map.current.queryTerrainElevation
+                ? (map.current.queryTerrainElevation([activeData[startIdx].lng, activeData[startIdx].lat]) || 0)
+                : 0;
+              const elevationOffset = startTerrainElev - startGPSElev;
+              window.mapConsole.hiker3DElevationOffset = elevationOffset;
+
               window.mapConsole.isFlying = true;
               window.mapConsole.hiker3DPosition = [activeData[startIdx].lng, activeData[startIdx].lat];
               window.mapConsole.hiker3DRotation = map.current.getBearing();

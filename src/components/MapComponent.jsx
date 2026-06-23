@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import { createHiker3DLayer } from './Hiker3DLayer';
+import { X, Activity, Navigation, Clock, TrendingUp, Mountain as MountainIcon, Flame } from 'lucide-react';
 
 const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList, showTrailLayer = true, showPoiLayer = true, importedRoute, importedPhotos = [] }) => {
   const mapContainer = useRef(null);
@@ -11,6 +12,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
   const photoMarkersRef = useRef([]);
   const importedPhotosRef = useRef(importedPhotos);
   const [profileData, setProfileData] = useState([]);
+  const [simulationSummary, setSimulationSummary] = useState(null);
   const poiListRef = useRef(poiList);
 
   useEffect(() => {
@@ -736,7 +738,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   
                   const currentIndex = Math.floor(i);
                   if (currentIndex >= activeData.length - 1) {
-                    window.mapConsole.stopFlyThrough();
+                    window.mapConsole.stopFlyThrough(true); // true = natural finish
                     return;
                   }
                   const nextIndex = Math.min(currentIndex + 1, activeData.length - 1);
@@ -976,14 +978,60 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             }, 1500);
           };
           
-          window.mapConsole.stopFlyThrough = () => {
+          window.mapConsole.stopFlyThrough = (isNaturalFinish = false) => {
             if(flyTimeoutId) clearTimeout(flyTimeoutId);
             if(flyAnimationId) cancelAnimationFrame(flyAnimationId);
             isFlying = false;
-              window.mapConsole.isFlying = false;
-              if (map.current.getLayer('hiker-3d-model')) {
-                map.current.removeLayer('hiker-3d-model');
-              }
+            window.mapConsole.isFlying = false;
+            if (map.current.getLayer('hiker-3d-model')) {
+              map.current.removeLayer('hiker-3d-model');
+            }
+            
+            // Tampilkan summary banner JIKA navigasi data import dan selesai natural
+            if (isNaturalFinish === true && window.mapConsole.importedSimulationData) {
+               const activeData = window.mapConsole.importedSimulationData;
+               const endData = activeData[activeData.length - 1];
+               const distKm = endData.distance.toFixed(2);
+               const timeMins = Math.round(endData.cumulative_time);
+               let hours = Math.floor(timeMins / 60);
+               let mins = timeMins % 60;
+               const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+               
+               let ascent = 0;
+               let maxElev = activeData[0].elevation || 0;
+               for (let j = 1; j < activeData.length; j++) {
+                  if (activeData[j].elevation > activeData[j-1].elevation) {
+                     ascent += (activeData[j].elevation - activeData[j-1].elevation);
+                  }
+                  if (activeData[j].elevation > maxElev) {
+                     maxElev = activeData[j].elevation;
+                  }
+               }
+               const calories = Math.round(7 * timeMins); // roughly 7 kcal per min of hiking
+               
+               setSimulationSummary({
+                  distance: distKm,
+                  time: timeStr,
+                  ascent: Math.round(ascent),
+                  maxElevation: Math.round(maxElev),
+                  calories: calories
+               });
+               
+               // Zoom out ke bbox
+               if (window.mapConsole.baseImportedGeojson) {
+                 try {
+                   const bbox = turf.bbox(window.mapConsole.baseImportedGeojson);
+                   map.current.fitBounds(bbox, {
+                     padding: { top: 50, bottom: 50, left: 50, right: 50 },
+                     pitch: 0,
+                     bearing: 0,
+                     duration: 2000
+                   });
+                 } catch (e) {
+                   console.error('Fit bounds error on finish:', e);
+                 }
+               }
+            }
             
             // Kembalikan rute penuh saat simulasi dihentikan
             if (window.mapConsole.baseImportedGeojson) {
@@ -1039,7 +1087,63 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
     if (window.mapConsole) window.mapConsole.baseRouteFeatures = features;
   }, [profileData, startPoi, endPoi]);
 
-  return <div ref={mapContainer} className="map-container" />;
+  return (
+    <>
+      <div ref={mapContainer} className="map-container" />
+      
+      {simulationSummary && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          border: '1px solid rgba(56, 189, 248, 0.3)',
+          borderRadius: '16px',
+          padding: '24px',
+          color: 'white',
+          zIndex: 1000,
+          width: '90%',
+          maxWidth: '380px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(12px)',
+          fontFamily: 'Inter, sans-serif'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', fontSize: '18px', color: '#38bdf8' }}>
+              <Activity size={24} /> Navigation Complete
+            </div>
+            <button onClick={() => setSimulationSummary(null)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#e2e8f0', cursor: 'pointer', padding: '6px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <X size={16} />
+            </button>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px' }}><Navigation size={14} /> Distance</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{simulationSummary.distance} <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: 'normal' }}>km</span></div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px' }}><Clock size={14} /> Time</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{simulationSummary.time}</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px' }}><TrendingUp size={14} /> Ascent</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{simulationSummary.ascent} <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: 'normal' }}>m</span></div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px' }}><MountainIcon size={14} /> Max Elev</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{simulationSummary.maxElevation} <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: 'normal' }}>m</span></div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2', background: 'rgba(249, 115, 22, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(249, 115, 22, 0.2)', marginTop: '8px', alignItems: 'center', textAlign: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fdba74', fontSize: '14px' }}><Flame size={16} /> Total Calories Burned</div>
+              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f97316', marginTop: '4px' }}>{simulationSummary.calories} <span style={{ fontSize: '16px', color: '#fdba74', fontWeight: 'normal' }}>kcal</span></div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 };
 
 export default MapComponent;

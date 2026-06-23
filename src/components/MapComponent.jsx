@@ -657,6 +657,12 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
               let pausedUntil = 0;
               const shownItems = new Set();
               let lastAnimTime = null;
+              
+              // EMA (Exponential Moving Average) untuk posisi kamera
+              // Ini menghilangkan getaran lateral akibat GPS noise.
+              // AMAN dari efek mundur karena bearing dihitung dari raw GPS look-ahead, BUKAN dari delta posisi ghost.
+              let smoothCamLng = activeData[startIdx].lng;
+              let smoothCamLat = activeData[startIdx].lat;
 
               const animate = (time) => {
                 if (!isFlying) return;
@@ -731,12 +737,16 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     cumulative_time: interpTime - startPt.cumulative_time
                   };
 
-                  // --- POSISI 3D HIKER (DIRECT - NO EMA LAG) ---
-                  // EMA dihapus total karena terbukti menambah lag yang membuat ghost tertinggal jauh
-                  // dan terlihat seperti melompat mundur saat memasuki tikungan.
-                  // Distance-based interpolation (interpLng/interpLat) sudah SEMPURNA SMOOTH dari sananya.
-                  const hikerLng = interpLng;
-                  const hikerLat = interpLat;
+                  // --- POSISI 3D HIKER + KAMERA (EMA SMOOTHED) ---
+                  // EMA menghilangkan getaran lateral akibat GPS noise.
+                  // Sebelumnya EMA dihapus karena menyebabkan glitch mundur, namun sekarang AMAN
+                  // karena bearing tidak dihitung dari delta posisi ghost melainkan dari raw GPS look-ahead.
+                  const EMA_CAM = 0.15; // 15% per frame: cukup smooth untuk hilangkan noise, tidak terlalu lambat
+                  smoothCamLng += (interpLng - smoothCamLng) * EMA_CAM;
+                  smoothCamLat += (interpLat - smoothCamLat) * EMA_CAM;
+                  
+                  const hikerLng = smoothCamLng;
+                  const hikerLat = smoothCamLat;
                   window.mapConsole.hiker3DPosition = [hikerLng, hikerLat];
 
                   // Fungsi utilitas untuk shortest path angular difference di JavaScript
@@ -745,11 +755,9 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     return ((((diff + 180) % 360) + 360) % 360) - 180;
                   };
 
-                  // BEARING dihitung dari LOOK-AHEAD BERBASIS JARAK (bukan jumlah titik)
-                  // Look-ahead 3 titik bermasalah saat vertex GPS sangat rapat (hanya 3-6 meter),
-                  // menyebabkan bearing berubah terlalu cepat dan kamera goyang hebat.
-                  // Solusi: cari titik yang SETIDAKNYA 30 meter ke depan berdasarkan jarak kumulatif.
-                  const LOOKAHEAD_KM = 0.030; // 30 meter ke depan
+                  // BEARING dihitung dari LOOK-AHEAD BERBASIS JARAK (50 meter ke depan)
+                  // Jarak lebih jauh = bearing lebih stabil, tidak terpengaruh zigzag GPS kecil.
+                  const LOOKAHEAD_KM = 0.050; // 50 meter ke depan
                   const lookAheadTargetDist = currentSimDistance + LOOKAHEAD_KM;
                   let lookAheadK = currentK;
                   while (lookAheadK < endIdx && activeData[lookAheadK].distance < lookAheadTargetDist) {
@@ -763,7 +771,6 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   let targetBearing = currentBearing; // Default: pertahankan bearing saat ini
                   if (lookAheadActualDist > 5) {
                     // Hanya update bearing jika look-ahead point cukup jauh (>5 meter)
-                    // Vertex yang sangat berdekatan (<5m) akan di-skip untuk mencegah kamera goyang
                     targetBearing = turf.bearing(
                       turf.point([interpLng, interpLat]),
                       turf.point([lookAheadPt.lng, lookAheadPt.lat])
@@ -773,14 +780,13 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   // Hitung diff untuk smoothing rotasi
                   let diff = getShortestAngle(targetBearing, currentBearing);
                   
-                  // Kamera: smoothing factor 0.04 — sangat smooth/cinematic, tidak goyang karena vertex rapat
-                  // Faktor kecil = kamera berputar LAMBAT dan MULUS, ideal untuk navigasi gunung
-                  currentBearing += diff * 0.04;
+                  // Kamera: factor 0.03 — sangat lambat dan sinematik, tidak goyang sama sekali
+                  currentBearing += diff * 0.03;
                   
-                  // Model 3D: Sedikit lebih responsif dari kamera agar berbelok natural (factor 0.10)
+                  // Model 3D: sedikit lebih responsif dari kamera (factor 0.08)
                   let currentModelBearing = window.mapConsole.hiker3DRotation !== undefined ? window.mapConsole.hiker3DRotation : targetBearing;
                   let diffModel = getShortestAngle(targetBearing, currentModelBearing);
-                  window.mapConsole.hiker3DRotation = currentModelBearing + diffModel * 0.10;
+                  window.mapConsole.hiker3DRotation = currentModelBearing + diffModel * 0.08;
 
                   // Hitung padding dinamis berdasarkan panel UI yang terbuka agar icon pendaki tetap di tengah layar yang terlihat
                   let dynPadding = { top: 0, bottom: 0, left: 0, right: 0 };

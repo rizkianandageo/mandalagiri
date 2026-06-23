@@ -162,7 +162,11 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             const rotationX = new THREE.Matrix4().makeRotationX(Math.PI / 2);
 
             // Bearing rotation di MapLibre world space (setelah RotationX)
-            const rotationZ = new THREE.Matrix4().makeRotationZ(-bearing * Math.PI / 180);
+            // Tambahkan offset 180 derajat (Math.PI) karena Mixamo model umumnya 
+            // menghadap ke kamera (+Z) yang setelah di-rotate X menjadi menghadap Selatan.
+            // Kita ingin defaultnya menghadap Utara (searah jalur saat bearing 0).
+            const modelForwardOffset = Math.PI; 
+            const rotationZ = new THREE.Matrix4().makeRotationZ(-bearing * Math.PI / 180 + modelForwardOffset);
 
             // COUNTER-PITCH ROTATION: Agar model selalu tampak tegak lurus di layar.
             // pitchAxis = arah "kanan kamera" = (cos(bearing), -sin(bearing), 0)

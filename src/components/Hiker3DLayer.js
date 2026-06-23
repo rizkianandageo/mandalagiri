@@ -27,6 +27,9 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             this.model = null;
             this.lastTime = performance.now();
             this.frameCount = 0;
+            // Buffer posisi 1 frame untuk sinkronisasi dengan trail (setData async)
+            this.syncedPosition = null;
+            this.syncedRotation = null;
 
             // Load Model GLB
             const loader = new GLTFLoader();
@@ -91,11 +94,24 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
         render: function (gl, args) {
             if (!this.model) return;
 
-            // Ambil posisi dan rotasi dari global state (di-update oleh MapComponent)
-            const lngLat = window.mapConsole?.hiker3DPosition;
-            if (!lngLat) return;
+            // Ambil posisi baru dari global state (di-update oleh MapComponent)
+            const newPos = window.mapConsole?.hiker3DPosition;
+            if (!newPos) return;
+            const newRot = window.mapConsole?.hiker3DRotation || 0;
 
-            const bearing = window.mapConsole?.hiker3DRotation || 0;
+            // SINKRONISASI 1-FRAME BUFFER:
+            // Saat jumpTo() memicu render, hiker3DPosition sudah update ke P+1
+            // tapi trail (setData async via web worker) masih menampilkan P.
+            // Dengan memakai syncedPosition (nilai frame sebelumnya), icon dan trail
+            // selalu berada di posisi yang sama di setiap render.
+            // Ketika setData worker selesai dan trail update ke P+1,
+            // syncedPosition sudah di-update ke P+1 → keduanya sinkron.
+            const lngLat = this.syncedPosition || newPos;
+            const bearing = this.syncedRotation !== null ? this.syncedRotation : newRot;
+
+            // Simpan nilai saat ini untuk digunakan pada render berikutnya
+            this.syncedPosition = [...newPos];
+            this.syncedRotation = newRot;
 
             // Dapatkan elevasi terrain di titik model
             let elevation = 0;
@@ -209,12 +225,10 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             this.renderer.resetState();
             this.renderer.render(this.scene, this.camera);
 
-            // SELALU trigger repaint selama model aktif agar animasi walking terus smooth.
-            // Animasi mixer perlu dipanggil terus-menerus (bukan hanya saat isFlying)
-            // supaya loop berjalan mulus.
-            if (this.mixer) {
-                this.map.triggerRepaint();
-            }
+            // TIDAK menggunakan triggerRepaint() — rendering sudah didriving oleh:
+            // 1. jumpTo() di MapComponent (60fps selama navigasi)
+            // 2. setData completion trigger dari MapLibre (saat trail update)
+            // Kedua sumber render ini sudah cukup untuk animasi walking yang smooth.
         }
     };
 }

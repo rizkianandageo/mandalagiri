@@ -1082,7 +1082,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
       {simulationSummary && (
         <div style={{
           position: 'absolute',
-          top: '50%',
+          top: '28%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
           backgroundColor: 'rgba(15, 23, 42, 0.95)',
@@ -1106,24 +1106,33 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             </button>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px' }}><Navigation size={14} /> Distance</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{simulationSummary.distance} <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: 'normal' }}>km</span></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            {/* Distance Box (Sky Blue) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: 'rgba(56, 189, 248, 0.1)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#bae6fd', fontSize: '13px' }}><Navigation size={14} /> Distance</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#38bdf8' }}>{simulationSummary.distance} <span style={{ fontSize: '14px', color: '#bae6fd', fontWeight: 'normal' }}>km</span></div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px' }}><Clock size={14} /> Time</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{simulationSummary.time}</div>
+            
+            {/* Time Box (Emerald) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: 'rgba(52, 211, 153, 0.1)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(52, 211, 153, 0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#a7f3d0', fontSize: '13px' }}><Clock size={14} /> Time</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#34d399' }}>{simulationSummary.time}</div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px' }}><TrendingUp size={14} /> Ascent</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{simulationSummary.ascent} <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: 'normal' }}>m</span></div>
+            
+            {/* Ascent Box (Indigo) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: 'rgba(129, 140, 248, 0.1)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(129, 140, 248, 0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#c7d2fe', fontSize: '13px' }}><TrendingUp size={14} /> Ascent</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#818cf8' }}>{simulationSummary.ascent} <span style={{ fontSize: '14px', color: '#c7d2fe', fontWeight: 'normal' }}>m</span></div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px' }}><MountainIcon size={14} /> Max Elev</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{simulationSummary.maxElevation} <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: 'normal' }}>m</span></div>
+            
+            {/* Max Elev Box (Rose) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: 'rgba(251, 113, 133, 0.1)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(251, 113, 133, 0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fecdd3', fontSize: '13px' }}><MountainIcon size={14} /> Max Elev</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#fb7185' }}>{simulationSummary.maxElevation} <span style={{ fontSize: '14px', color: '#fecdd3', fontWeight: 'normal' }}>m</span></div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2', background: 'rgba(249, 115, 22, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(249, 115, 22, 0.2)', marginTop: '8px', alignItems: 'center', textAlign: 'center' }}>
+            
+            {/* Calories Box (Orange) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2', background: 'rgba(249, 115, 22, 0.1)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(249, 115, 22, 0.2)', marginTop: '4px', alignItems: 'center', textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fdba74', fontSize: '14px' }}><Flame size={16} /> Total Calories Burned</div>
               <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f97316', marginTop: '4px' }}>{simulationSummary.calories} <span style={{ fontSize: '16px', color: '#fdba74', fontWeight: 'normal' }}>kcal</span></div>
             </div>

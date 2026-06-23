@@ -162,7 +162,8 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             
             // Kita coba tanpa offset dulu. Jika model berjalan mundur/samping, 
             // kita bisa tambahkan Math.PI atau Math.PI/2 di sini.
-            const modelForwardOffset = 0; 
+            // Update: Model terbalik (jalan mundur), jadi kita tambahkan offset 180 derajat (Math.PI)
+            const modelForwardOffset = Math.PI; 
             const rotationY = new THREE.Matrix4().makeRotationY(-bearingRad + modelForwardOffset);
             const rotationX = new THREE.Matrix4().makeRotationX(Math.PI / 2);
             

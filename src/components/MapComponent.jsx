@@ -614,11 +614,12 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
               const endDist = activeData[endIdx]?.distance || activeData[activeData.length - 1].distance;
               const totalDistance = Math.abs(endDist - startDist);
               
-              // Kecepatan referensi dari rute asli Mandalagiri (17.12 km dalam 15 detik)
+              // Kecepatan referensi dari rute asli Mandalagiri (17.12 km dalam 30 detik)
               // Dengan rasio ini, semua simulasi navigasi dan data import akan berjalan pada tempo visual yang sama persis
-              const referenceSpeedKmPerMs = 17.12 / 15000;
+              // Kecepatan diperlambat (awalnya 15000, sekarang 30000) agar animasi 3D lebih luwes terlihat.
+              const referenceSpeedKmPerMs = 17.12 / 30000;
               let targetDurationMs = totalDistance / referenceSpeedKmPerMs;
-              if (targetDurationMs < 3000) targetDurationMs = 3000; // Minimal 3 detik agar tidak terlalu instan
+              if (targetDurationMs < 5000) targetDurationMs = 5000; // Minimal 5 detik agar tidak terlalu instan
               
               // Frame-rate independent: Poin yang dilewati per ms
               const pointsPerMs = (endIdx - startIdx) / targetDurationMs;

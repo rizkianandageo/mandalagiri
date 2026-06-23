@@ -71,11 +71,11 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
                     // --- ROOT MOTION FIX ---
                     // Mengatasi glitch animasi maju-mundur (gergaji) karena model GLB 
                     // di-export tanpa mencentang "In-Place" di Mixamo.
-                    // Kita kunci sumbu X dan Z dari tulang Hips agar karakternya jalan di tempat,
+                    // Kita kunci sumbu X dan Z dari SEMUA tulang yang bergerak (position),
+                    // sehingga mustahil ada tulang yang berjalan menjauh dari titik pusat (Root Motion),
                     // tapi biarkan sumbu Y (naik-turun) agar pantulan tubuhnya tetap alami.
                     anim.tracks.forEach(track => {
-                        if (track.name.toLowerCase().includes('hips.position') || 
-                            track.name.toLowerCase().includes('root.position')) {
+                        if (track.name.endsWith('.position')) {
                             const values = track.values;
                             if (values.length >= 3) {
                                 const startX = values[0];

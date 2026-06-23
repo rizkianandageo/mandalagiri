@@ -849,15 +849,18 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                       const coords = baseGeojson.features[0].geometry.coordinates;
                       // Gambar jalur impor SEKALIGUS 3 segment di depan
                       const lookAheadCoords = Math.min(currentIndex + 4, coords.length);
-                      const trailCoords = coords.slice(0, lookAheadCoords);
-                      src.setData({
-                        type: 'FeatureCollection',
-                        features: [{
-                          type: 'Feature',
-                          properties: baseGeojson.features[0].properties || {},
-                          geometry: { type: 'LineString', coordinates: trailCoords }
-                        }]
-                      });
+                      if (window.mapConsole.lastImportedLookAhead !== lookAheadCoords) {
+                          const trailCoords = coords.slice(0, lookAheadCoords);
+                          src.setData({
+                            type: 'FeatureCollection',
+                            features: [{
+                              type: 'Feature',
+                              properties: baseGeojson.features[0].properties || {},
+                              geometry: { type: 'LineString', coordinates: trailCoords }
+                            }]
+                          });
+                          window.mapConsole.lastImportedLookAhead = lookAheadCoords;
+                      }
                     }
                   } else {
                     const src = map.current.getSource('jalur-slope-source');
@@ -867,8 +870,11 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                       // Ini menjamin walaupun perangkat lambat dan setData() memakan waktu lama,
                       // jalur merah sudah "siap" di depan kaki pendaki, tidak akan pernah overshoot.
                       const lookAheadSegs = Math.min(currentIndex + 3, baseFeatures.length);
-                      const trailFeatures = baseFeatures.slice(0, lookAheadSegs);
-                      src.setData({ type: 'FeatureCollection', features: trailFeatures });
+                      if (window.mapConsole.lastRouteLookAhead !== lookAheadSegs) {
+                          const trailFeatures = baseFeatures.slice(0, lookAheadSegs);
+                          src.setData({ type: 'FeatureCollection', features: trailFeatures });
+                          window.mapConsole.lastRouteLookAhead = lookAheadSegs;
+                      }
                     }
                   }
 

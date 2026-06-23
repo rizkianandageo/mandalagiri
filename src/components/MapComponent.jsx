@@ -992,15 +992,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             if (isNaturalFinish === true && window.mapConsole.importedSimulationData) {
                const stats = window.mapConsole.importedRouteStats || {};
                
-               setSimulationSummary({
-                  distance: stats.distance || '--',
-                  time: stats.timerTimeStr || stats.elapsedTimeStr || '--',
-                  ascent: stats.elevationGain || '--',
-                  maxElevation: stats.maxElevation || '--',
-                  calories: stats.calories || '--'
-               });
-               
-               // Zoom out ke bbox
+               // Zoom out ke bbox terlebih dahulu
                if (window.mapConsole.baseImportedGeojson) {
                  try {
                    const bbox = turf.bbox(window.mapConsole.baseImportedGeojson);
@@ -1008,12 +1000,23 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                      padding: { top: 50, bottom: 50, left: 50, right: 50 },
                      pitch: 0,
                      bearing: 0,
-                     duration: 2000
+                     duration: 2000 // Durasi animasi zoom out 2 detik
                    });
                  } catch (e) {
                    console.error('Fit bounds error on finish:', e);
                  }
                }
+
+               // Munculkan banner SETELAH animasi zoom out selesai (2000ms + buffer 200ms)
+               setTimeout(() => {
+                 setSimulationSummary({
+                    distance: stats.distance || '--',
+                    time: stats.timerTimeStr || stats.elapsedTimeStr || '--',
+                    ascent: stats.elevationGain || '--',
+                    maxElevation: stats.maxElevation || '--',
+                    calories: stats.calories || '--'
+                 });
+               }, 2200);
             }
             
             // Kembalikan rute penuh saat simulasi dihentikan

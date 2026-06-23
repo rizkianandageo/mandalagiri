@@ -625,6 +625,15 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
               const speedDistPerMs = totalDistance / targetDurationMs;
               let currentSimDistance = activeData[startIdx].distance;
               let currentK = startIdx;
+              
+              // --- JALUR INVISIBLE HALUS KHUSUS 3D HIKER ---
+              // Membuat jalur yang dicleansing (noise/vertex dikurangi) agar icon 3D berjalan 
+              // sangat mulus (cinematic) tidak terpengaruh zigzag data GPS asli.
+              const rawCoords = activeData.slice(startIdx, endIdx + 1).map(p => [p.lng, p.lat]);
+              const rawLine = turf.lineString(rawCoords);
+              // Tolerance 0.00005 derajat (~5 meter), hapus titik-titik rapat/kasar
+              const simplifiedLine = turf.simplify(rawLine, {tolerance: 0.00005, highQuality: true});
+              const smoothedLineLength = turf.length(simplifiedLine, {units: 'kilometers'});
 
               // Tambahkan Hiker 3D Layer
               if (!map.current.getLayer('hiker-3d-model')) {
@@ -711,18 +720,21 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     cumulative_time: interpTime - startPt.cumulative_time
                   };
 
-                  window.mapConsole.hiker3DPosition = [interpLng, interpLat];
-
-                  let targetBearing = currentBearing;
-                  // Look-ahead pendek agar bearing akurat mengikuti kelokan terdekat
-                  const lookAheadIndex = Math.min(currentIndex + 3, activeData.length - 1);
-                  const nextPt = activeData[lookAheadIndex];
+                  // --- POSISI 3D HIKER MENGGUNAKAN JALUR INVISIBLE (SMOOTHED) ---
+                  // Hitung persentase progress simulasi dari total jarak asli
+                  const progress = totalDistance > 0 ? Math.min((currentSimDistance - startPt.distance) / totalDistance, 1.0) : 1.0;
+                  // Petakan persentase ke jalur yang sudah di-smoothing
+                  const hikerDist = progress * smoothedLineLength;
                   
-                  if (nextPt) {
-                    const p1 = turf.point([interpLng, interpLat]);
-                    const p2 = turf.point([nextPt.lng, nextPt.lat]);
-                    targetBearing = turf.bearing(p1, p2);
-                  }
+                  // Ambil posisi persis di jalur smoothing
+                  const hikerPt = turf.along(simplifiedLine, hikerDist, {units: 'kilometers'});
+                  const [hikerLng, hikerLat] = hikerPt.geometry.coordinates;
+                  window.mapConsole.hiker3DPosition = [hikerLng, hikerLat];
+
+                  // Look-ahead sejauh ~20 meter di jalur smoothing untuk bearing yang sangat stabil
+                  const lookAheadDist = Math.min(hikerDist + 0.02, smoothedLineLength);
+                  const lookAheadPt = turf.along(simplifiedLine, lookAheadDist, {units: 'kilometers'});
+                  let targetBearing = turf.bearing(hikerPt, lookAheadPt);
 
                   // Hitung diff untuk smoothing rotasi
                   let diff = targetBearing - currentBearing;

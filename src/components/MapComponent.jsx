@@ -645,10 +645,13 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                 
                 // Jeda animasi saat popup foto/checkpoint muncul
                 if (time < pausedUntil) {
+                  window.mapConsole.hikerPaused = true; // pause animasi 3D walking
                   lastAnimTime = time; // Pastikan waktu terus jalan agar tidak melompat setelah pause
                   flyAnimationId = requestAnimationFrame(animate);
                   return;
                 }
+                // Navigasi berjalan lagi — resume animasi walking
+                window.mapConsole.hikerPaused = false;
 
                 if (Math.floor(i) >= endIdx) {
                   window.mapConsole.stopFlyThrough();

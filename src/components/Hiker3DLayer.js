@@ -92,8 +92,9 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             let elevation = 0;
             if (this.map.queryTerrainElevation) {
                 const terrainElev = this.map.queryTerrainElevation(lngLat) || 0;
-                // modelSizeMeters = 80m, origin di tengah model → offset = 40m (setengahnya)
-                const elevationOffset = 40; // meter
+                // Naikkan offset agar model tidak menembus terrain.
+                // Dinaikkan ke 80m untuk buffer yang cukup pada terrain curam.
+                const elevationOffset = 80; // meter
                 elevation = terrainElev + elevationOffset;
             }
 
@@ -139,15 +140,16 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
 
             // COUNTER-PITCH ROTATION: Agar model selalu tampak tegak lurus di layar
             // meski kamera MapLibre sedang dalam mode pitch/tilt (3D terrain view).
-            // Caranya: putar model berlawanan arah pitch kamera, menggunakan sumbu 
-            // "camera right" yang berputar mengikuti bearing.
+            // Tanda NEGATIF (-mapPitchRad) penting: kamera pitch = model harus counter-rotate
+            // berlawanan arah agar terlihat tegak dari sudut pandang layar.
             const mapBearing = this.map.getBearing() || 0;
             const mapPitch = this.map.getPitch() || 0;
             const mapBearingRad = mapBearing * Math.PI / 180;
             const mapPitchRad = mapPitch * Math.PI / 180;
             // Sumbu pitch kamera (arah "kanan kamera" di Mercator world space)
             const pitchAxis = new THREE.Vector3(Math.cos(mapBearingRad), Math.sin(mapBearingRad), 0);
-            const counterPitch = new THREE.Matrix4().makeRotationAxis(pitchAxis, mapPitchRad);
+            // Gunakan NEGATIF mapPitchRad untuk counter-rotate berlawanan pitch kamera
+            const counterPitch = new THREE.Matrix4().makeRotationAxis(pitchAxis, -mapPitchRad);
 
             const l = new THREE.Matrix4()
                 .makeTranslation(mercator.x, mercator.y, mercator.z)
@@ -167,14 +169,24 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
                 console.log('Hiker3D Debug: pos', lngLat, '| elev:', Math.round(elevation), 'm | zoom:', currentZoom.toFixed(1));
             }
 
-            // Update animasi
+            // Update animasi — pause/resume berdasarkan flag hikerPaused dari MapComponent
             if (this.mixer) {
-                const now = performance.now();
-                if (!this.lastTime) this.lastTime = now;
-                let delta = (now - this.lastTime) / 1000;
-                if (delta > 0.1) delta = 0.1;
-                this.lastTime = now;
-                this.mixer.update(delta);
+                const isPaused = window.mapConsole?.hikerPaused === true;
+                if (isPaused) {
+                    // Pause: set timeScale = 0 agar animasi beku tapi tidak di-reset
+                    this.mixer.timeScale = 0;
+                } else {
+                    // Resume: kembalikan ke kecepatan normal
+                    this.mixer.timeScale = 1;
+                    const now = performance.now();
+                    if (!this.lastTime) this.lastTime = now;
+                    let delta = (now - this.lastTime) / 1000;
+                    if (delta > 0.1) delta = 0.1;
+                    this.lastTime = now;
+                    this.mixer.update(delta);
+                }
+                // Update lastTime selalu, agar saat resume tidak melompat
+                if (isPaused) this.lastTime = performance.now();
             }
 
             // Reset state WebGL Three.js agar tidak crash dengan state MapLibre

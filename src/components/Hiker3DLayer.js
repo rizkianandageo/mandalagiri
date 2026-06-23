@@ -68,22 +68,28 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
                     console.log('Hiker3D: Ditemukan', gltf.animations.length, 'animasi:',
                         gltf.animations.map(a => a.name).join(', '));
                         
-                    // --- ROOT MOTION FIX ---
-                    // Mengatasi glitch animasi maju-mundur (gergaji) karena model GLB 
-                    // di-export tanpa mencentang "In-Place" di Mixamo.
-                    // Kita kunci sumbu X dan Z dari SEMUA tulang yang bergerak (position),
-                    // sehingga mustahil ada tulang yang berjalan menjauh dari titik pusat (Root Motion),
-                    // tapi biarkan sumbu Y (naik-turun) agar pantulan tubuhnya tetap alami.
+                    // --- ROOT MOTION FIX (CORRECTED) ---
+                    // Hanya kunci tulang ROOT/HIPS, bukan semua tulang!
+                    // Alasan: Tulang kaki & lengan HARUS bisa bergerak di local space-nya 
+                    // untuk menciptakan animasi berjalan yang natural (langkah kaki, ayunan tangan).
+                    // Mengunci SEMUA tulang justru membuat animasi tidak alami dan berosilasi (penyebab glitch).
+                    // Hanya ROOT/HIPS yang bergerak maju di world-space → itulah yang harus dikunci.
                     anim.tracks.forEach(track => {
                         if (track.name.endsWith('.position')) {
+                            const boneName = track.name.split('.')[0];
+                            // Cocokkan nama root bone yang umum di Mixamo / standar 3D:
+                            const isRootBone = /hip|root|pelvis|armature|spine|chest/i.test(boneName);
+                            
+                            if (!isRootBone) return; // Lewati tulang kaki/tangan/dll
+                            
                             const values = track.values;
                             if (values.length >= 3) {
                                 const startX = values[0];
                                 const startZ = values[2];
                                 for (let i = 0; i < values.length; i += 3) {
-                                    values[i] = startX;     // Lock X (Kiri/Kanan local)
-                                    values[i + 2] = startZ; // Lock Z (Maju/Mundur local)
-                                    // Y dibiarkan (naik-turun)
+                                    values[i] = startX;     // Lock X (Kiri/Kanan world)
+                                    values[i + 2] = startZ; // Lock Z (Maju/Mundur world)
+                                    // Y dibiarkan (naik-turun untuk pantulan berjalan)
                                 }
                             }
                         }
@@ -138,8 +144,8 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             }
             
             // EMA (Exponential Moving Average) Smoothing Factor. 
-            // 0.05 artinya 5% menuju target per frame, sangat halus.
-            const smoothFactor = 0.05; 
+            // 0.15 artinya 15% menuju target per frame - responsif tapi tetap mulus.
+            const smoothFactor = 0.15; 
             this.currentElevation += (rawElevation - this.currentElevation) * smoothFactor;
             
             let elevation = this.currentElevation;

@@ -736,17 +736,21 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   const lookAheadPt = turf.along(simplifiedLine, lookAheadDist, {units: 'kilometers'});
                   let targetBearing = turf.bearing(hikerPt, lookAheadPt);
 
+                  // Fungsi utilitas untuk shortest path angular difference di JavaScript
+                  const getShortestAngle = (target, current) => {
+                    let diff = target - current;
+                    return ((((diff + 180) % 360) + 360) % 360) - 180;
+                  };
+
                   // Hitung diff untuk smoothing rotasi
-                  let diff = targetBearing - currentBearing;
-                  diff = ((diff + 180) % 360) - 180;
+                  let diff = getShortestAngle(targetBearing, currentBearing);
                   
                   // Kamera: smoothed bearing (0.05 factor) agar pergerakan kamera halus dan lambat
                   currentBearing += diff * 0.05;
                   
                   // Model 3D: Smoothing terpisah agar berbelok lebih lincah seperti bus (factor 0.15)
                   let currentModelBearing = window.mapConsole.hiker3DRotation !== undefined ? window.mapConsole.hiker3DRotation : targetBearing;
-                  let diffModel = targetBearing - currentModelBearing;
-                  diffModel = ((diffModel + 180) % 360) - 180;
+                  let diffModel = getShortestAngle(targetBearing, currentModelBearing);
                   window.mapConsole.hiker3DRotation = currentModelBearing + diffModel * 0.15;
 
                   // Hitung padding dinamis berdasarkan panel UI yang terbuka agar icon pendaki tetap di tengah layar yang terlihat

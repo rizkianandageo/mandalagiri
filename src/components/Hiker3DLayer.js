@@ -50,6 +50,15 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
 
                 this.scene.add(this.model);
 
+                // Hitung bounding box model untuk menemukan posisi kaki (feet)
+                // agar origin model tepat di kaki, bukan di tengah badan.
+                // Model ini non-standard: kaki di +Y, kepala di -Y dalam GLTF space.
+                // Feet offset = -box.max.y agar kaki bergerak ke Y=0 (origin).
+                const box = new THREE.Box3().setFromObject(this.model);
+                this.modelFootOffset = -box.max.y;
+                console.log('Hiker3D: BBox Y:', box.min.y.toFixed(2), 'to', box.max.y.toFixed(2),
+                    '| footOffset:', this.modelFootOffset.toFixed(2));
+
                 // Mainkan animasi pertama jika ada
                 if (gltf.animations && gltf.animations.length > 0) {
                     console.log('Hiker3D: Ditemukan', gltf.animations.length, 'animasi:',
@@ -92,9 +101,9 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             let elevation = 0;
             if (this.map.queryTerrainElevation) {
                 const terrainElev = this.map.queryTerrainElevation(lngLat) || 0;
-                // Naikkan offset agar model tidak menembus terrain.
-                // Dinaikkan ke 80m untuk buffer yang cukup pada terrain curam.
-                const elevationOffset = 80; // meter
+                // Gunakan offset minimal karena origin model sudah di-shift ke kaki.
+                // Buffer kecil (5m) hanya untuk mencegah kaki menembus terrain pada lereng curam.
+                const elevationOffset = 5; // meter
                 elevation = terrainElev + elevationOffset;
             }
 
@@ -151,12 +160,19 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             // Gunakan NEGATIF mapPitchRad untuk counter-rotate berlawanan pitch kamera
             const counterPitch = new THREE.Matrix4().makeRotationAxis(pitchAxis, -mapPitchRad);
 
+            // Local translation untuk geser origin dari tengah badan ke kaki model.
+            // Ini menghilangkan parallax displacement: dengan origin di kaki,
+            // posisi model di peta = posisi kaki = tepat di atas jalur trail.
+            const footOffset = this.modelFootOffset !== undefined ? this.modelFootOffset : 0;
+            const feetTranslation = new THREE.Matrix4().makeTranslation(0, footOffset, 0);
+
             const l = new THREE.Matrix4()
                 .makeTranslation(mercator.x, mercator.y, mercator.z)
                 .scale(new THREE.Vector3(scale, scale, scale))
                 .multiply(rotationX)
                 .multiply(counterPitch)
-                .multiply(rotationZ);
+                .multiply(rotationZ)
+                .multiply(feetTranslation); // ← geser origin ke kaki (lokal, sebelum rotasi)
 
             // Set camera matrix = MVP dari MapLibre × Model transform
             this.camera.projectionMatrix = m.multiply(l);

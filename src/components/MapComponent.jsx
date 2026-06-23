@@ -832,8 +832,9 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     const baseGeojson = window.mapConsole.baseImportedGeojson;
                     if (src && baseGeojson && baseGeojson.features && baseGeojson.features.length > 0) {
                       const coords = baseGeojson.features[0].geometry.coordinates;
-                      const trailCoords = coords.slice(0, currentIndex + 1);
-                      trailCoords.push([interpLng, interpLat]);
+                      // Gambar jalur impor SEKALIGUS 3 segment di depan
+                      const lookAheadCoords = Math.min(currentIndex + 4, coords.length);
+                      const trailCoords = coords.slice(0, lookAheadCoords);
                       src.setData({
                         type: 'FeatureCollection',
                         features: [{
@@ -847,20 +848,11 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     const src = map.current.getSource('jalur-slope-source');
                     const baseFeatures = window.mapConsole.baseRouteFeatures;
                     if (src && baseFeatures) {
-                      const trailFeatures = baseFeatures.slice(0, currentIndex);
-                      if (currentIndex < baseFeatures.length && activeData[currentIndex]) {
-                        trailFeatures.push({
-                          type: 'Feature',
-                          properties: { slope_cat: baseFeatures[currentIndex]?.properties?.slope_cat || 'easy' },
-                          geometry: {
-                            type: 'LineString',
-                            coordinates: [
-                              [activeData[currentIndex].lng, activeData[currentIndex].lat],
-                              [interpLng, interpLat]
-                            ]
-                          }
-                        });
-                      }
+                      // Gambar jalur merah SEKALIGUS 3 segment di depan pendaki
+                      // Ini menjamin walaupun perangkat lambat dan setData() memakan waktu lama,
+                      // jalur merah sudah "siap" di depan kaki pendaki, tidak akan pernah overshoot.
+                      const lookAheadSegs = Math.min(currentIndex + 3, baseFeatures.length);
+                      const trailFeatures = baseFeatures.slice(0, lookAheadSegs);
                       src.setData({ type: 'FeatureCollection', features: trailFeatures });
                     }
                   }

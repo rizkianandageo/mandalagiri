@@ -106,11 +106,9 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             // Dapatkan elevasi terrain di titik model
             let elevation = 0;
             if (this.map.queryTerrainElevation) {
-                const terrainElev = this.map.queryTerrainElevation(lngLat) || 0;
-                // Gunakan offset minimal karena origin model sudah di-shift ke kaki.
-                // Buffer kecil (5m) hanya untuk mencegah kaki menembus terrain pada lereng curam.
-                const elevationOffset = 5; // meter
-                elevation = terrainElev + elevationOffset;
+                // Jangan tambah offset elevasi! Offset membuat model "melayang" yang 
+                // pada sudut kamera miring terlihat seperti bergeser dari garis jalur.
+                elevation = this.map.queryTerrainElevation(lngLat) || 0;
             }
 
             // Konversi ke Mercator koordinat dengan elevasi
@@ -150,46 +148,33 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
 
             const m = new THREE.Matrix4().fromArray(mvpArray);
 
-            // Model Transform Matrix (L) — transform chain untuk Mixamo standard Y-up:
-            // Aplikasi berurutan (kanan ke kiri dalam perkalian matrix):
-            // 1. feetTranslation: geser kaki ke origin di GLTF lokal space
-            // 2. rotationX(+PI/2): konversi GLTF Y-up ke MapLibre Z-up (Y→Z, Z→-Y)
-            //    Mixamo menghadap -Z → setelah RotationX(+PI/2) menghadap North (+Y MapLibre)
-            // 3. rotationZ(-bearing): putar ke arah jalur (di MapLibre world space)
-            //    Tanda NEGATIF karena MapLibre bearing searah jarum jam, Three.js berlawanan
-            // 4. counterPitch: agar model tampak tegak meski kamera tilt
+            // POLA STANDAR MAPBOX/MAPLIBRE CUSTOM LAYER 3D:
+            // 1. feetTranslation: Geser origin ke kaki (jika model origin di tengah)
+            // 2. rotationY: Putar heading/bearing (karena model asli adalah Y-up)
+            // 3. rotationX: Putar 90 derajat agar Y-up menjadi Z-up (Mapbox world)
+            // 4. scale: Kalikan Y dengan -1 karena koordinat Mapbox adalah Left-Handed
+            // 5. translate: Pindahkan ke posisi Mercator di dunia
 
+            // Bearing diubah ke radian. Model Mixamo (+Z depan) perlu offset jika 
+            // tidak menghadap arah yang benar secara default.
+            // Mapbox bearing adalah searah jarum jam dari Utara.
+            const bearingRad = bearing * (Math.PI / 180);
+            
+            // Kita coba tanpa offset dulu. Jika model berjalan mundur/samping, 
+            // kita bisa tambahkan Math.PI atau Math.PI/2 di sini.
+            const modelForwardOffset = 0; 
+            const rotationY = new THREE.Matrix4().makeRotationY(-bearingRad + modelForwardOffset);
             const rotationX = new THREE.Matrix4().makeRotationX(Math.PI / 2);
-
-            // Bearing rotation di MapLibre world space (setelah RotationX)
-            // Tambahkan offset 180 derajat (Math.PI) karena Mixamo model umumnya 
-            // menghadap ke kamera (+Z) yang setelah di-rotate X menjadi menghadap Selatan.
-            // Kita ingin defaultnya menghadap Utara (searah jalur saat bearing 0).
-            const modelForwardOffset = Math.PI; 
-            const rotationZ = new THREE.Matrix4().makeRotationZ(-bearing * Math.PI / 180 + modelForwardOffset);
-
-            // COUNTER-PITCH ROTATION: Agar model selalu tampak tegak lurus di layar.
-            // pitchAxis = arah "kanan kamera" = (cos(bearing), -sin(bearing), 0)
-            // Note: -sin bukan +sin! Untuk bearing=90° (East), kanan kamera = South (-Y).
-            const mapBearing = this.map.getBearing() || 0;
-            const mapPitch = this.map.getPitch() || 0;
-            const mapBearingRad = mapBearing * Math.PI / 180;
-            const mapPitchRad = mapPitch * Math.PI / 180;
-            const pitchAxis = new THREE.Vector3(Math.cos(mapBearingRad), -Math.sin(mapBearingRad), 0);
-            const counterPitch = new THREE.Matrix4().makeRotationAxis(pitchAxis, -mapPitchRad);
-
-            // feetTranslation: geser kaki ke origin dalam GLTF lokal space
+            
             const footOffset = this.modelFootOffset !== undefined ? this.modelFootOffset : 0;
             const feetTranslation = new THREE.Matrix4().makeTranslation(0, footOffset, 0);
 
-            // Chain: T × S × counterPitch × rotationZ × rotationX × feetTranslation
-            // Kanan ke kiri: feetTranslation → rotationX → rotationZ → counterPitch → S → T
+            // Perhatikan scale Y menggunakan negatif (-scale) sesuai standar Mapbox Left-Handed
             const l = new THREE.Matrix4()
                 .makeTranslation(mercator.x, mercator.y, mercator.z)
-                .scale(new THREE.Vector3(scale, scale, scale))
-                .multiply(counterPitch)
-                .multiply(rotationZ)
+                .scale(new THREE.Vector3(scale, -scale, scale))
                 .multiply(rotationX)
+                .multiply(rotationY)
                 .multiply(feetTranslation);
 
             // Set camera matrix = MVP dari MapLibre × Model transform

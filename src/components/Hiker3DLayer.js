@@ -64,14 +64,36 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
 
                 // Mainkan animasi pertama jika ada
                 if (gltf.animations && gltf.animations.length > 0) {
+                    const anim = gltf.animations[0];
                     console.log('Hiker3D: Ditemukan', gltf.animations.length, 'animasi:',
                         gltf.animations.map(a => a.name).join(', '));
+                        
+                    // --- ROOT MOTION FIX ---
+                    // Mengatasi glitch animasi maju-mundur (gergaji) karena model GLB 
+                    // di-export tanpa mencentang "In-Place" di Mixamo.
+                    // Kita kunci sumbu X dan Z dari tulang Hips agar karakternya jalan di tempat,
+                    // tapi biarkan sumbu Y (naik-turun) agar pantulan tubuhnya tetap alami.
+                    anim.tracks.forEach(track => {
+                        if (track.name.toLowerCase().includes('hips.position') || 
+                            track.name.toLowerCase().includes('root.position')) {
+                            const values = track.values;
+                            if (values.length >= 3) {
+                                const startX = values[0];
+                                const startZ = values[2];
+                                for (let i = 0; i < values.length; i += 3) {
+                                    values[i] = startX;     // Lock X (Kiri/Kanan local)
+                                    values[i + 2] = startZ; // Lock Z (Maju/Mundur local)
+                                    // Y dibiarkan (naik-turun)
+                                }
+                            }
+                        }
+                    });
+
                     this.mixer = new THREE.AnimationMixer(this.model);
-                    // Mixamo export biasanya nama animasinya "mixamo.com" atau sesuai nama yang dipilih
-                    const action = this.mixer.clipAction(gltf.animations[0]);
+                    const action = this.mixer.clipAction(anim);
                     action.setLoop(THREE.LoopRepeat); // loop tanpa henti
                     action.play();
-                    console.log('Hiker3D: Memainkan animasi:', gltf.animations[0].name);
+                    console.log('Hiker3D: Memainkan animasi (In-Place patched):', anim.name);
                 } else {
                     console.warn('Hiker3D: Tidak ada animasi di file GLB ini!');
                 }

@@ -709,6 +709,9 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   const interpLat = pt1.lat + (pt2.lat - pt1.lat) * frac;
                   const interpDistance = pt1.distance + (pt2.distance - pt1.distance) * frac;
                   const interpTime = pt1.cumulative_time + (pt2.cumulative_time - pt1.cumulative_time) * frac;
+                  const interpElevation = pt1.elevation + (pt2.elevation - pt1.elevation) * frac;
+
+                  window.mapConsole.hiker3DElevation = interpElevation;
 
                   const startPt = activeData[startIdx];
                   const offsetPt = {

@@ -124,10 +124,12 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             const bearing = window.mapConsole?.hiker3DRotation || 0;
 
             // Dapatkan elevasi terrain di titik model
-            let elevation = 0;
-            if (this.map.queryTerrainElevation) {
-                // Jangan tambah offset elevasi! Offset membuat model "melayang" yang 
-                // pada sudut kamera miring terlihat seperti bergeser dari garis jalur.
+            // KUNCI: Gunakan elevasi interpolasi mulus dari GPS (jika ada), bukan queryTerrainElevation yang kasar.
+            // Query terrain MapLibre (Terrain RGB) sering memiliki efek "staircase" / tangga.
+            // Pada kamera miring 45 derajat, pantulan naik-turun tangga ini terlihat persis seperti 
+            // model melompat maju-mundur secara visual (optical illusion glitch).
+            let elevation = window.mapConsole?.hiker3DElevation;
+            if (elevation === undefined && this.map.queryTerrainElevation) {
                 elevation = this.map.queryTerrainElevation(lngLat) || 0;
             }
 

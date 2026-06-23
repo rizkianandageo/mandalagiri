@@ -68,28 +68,33 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
                     console.log('Hiker3D: Ditemukan', gltf.animations.length, 'animasi:',
                         gltf.animations.map(a => a.name).join(', '));
                         
-                    // --- ROOT MOTION FIX (CORRECTED) ---
-                    // Hanya kunci tulang ROOT/HIPS, bukan semua tulang!
-                    // Alasan: Tulang kaki & lengan HARUS bisa bergerak di local space-nya 
-                    // untuk menciptakan animasi berjalan yang natural (langkah kaki, ayunan tangan).
-                    // Mengunci SEMUA tulang justru membuat animasi tidak alami dan berosilasi (penyebab glitch).
-                    // Hanya ROOT/HIPS yang bergerak maju di world-space → itulah yang harus dikunci.
+                    // --- ROOT MOTION FIX (CORRECTED v2) ---
+                    // Kunci SEMUA SUMBU (X, Y, Z) dari tulang ROOT/HIPS saja.
+                    // MENGAPA Y juga dikunci:
+                    //   - Animasi Mixamo non-in-place sering punya Y DRIFT (hips naik akumulatif)
+                    //   - Saat animation loop, model melompat balik ke Y=0 → terlihat sebagai glitch turun
+                    //   - Efek naik-turun (bobbing) berjalan tetap alami dari ROTASI tulang kaki/lutut
+                    //     (tidak perlu Y position untuk menciptakan efek bobbing realistis)
+                    // MENGAPA spine/chest TIDAK dikunci:
+                    //   - Spine & chest adalah tulang ANAK dari hips, bukan root bone
+                    //   - Position track mereka (jika ada) bersifat RELATIF terhadap parent, tidak absolut
                     anim.tracks.forEach(track => {
                         if (track.name.endsWith('.position')) {
                             const boneName = track.name.split('.')[0];
-                            // Cocokkan nama root bone yang umum di Mixamo / standar 3D:
-                            const isRootBone = /hip|root|pelvis|armature|spine|chest/i.test(boneName);
+                            // Hanya root/hips/pelvis — BUKAN spine/chest (mereka child bones)
+                            const isRootBone = /hip|root|pelvis|armature/i.test(boneName);
                             
-                            if (!isRootBone) return; // Lewati tulang kaki/tangan/dll
+                            if (!isRootBone) return; // Lewati child bones
                             
                             const values = track.values;
                             if (values.length >= 3) {
                                 const startX = values[0];
+                                const startY = values[1]; // Kunci Y juga!
                                 const startZ = values[2];
                                 for (let i = 0; i < values.length; i += 3) {
-                                    values[i] = startX;     // Lock X (Kiri/Kanan world)
-                                    values[i + 2] = startZ; // Lock Z (Maju/Mundur world)
-                                    // Y dibiarkan (naik-turun untuk pantulan berjalan)
+                                    values[i]     = startX; // Lock X (kiri/kanan)
+                                    values[i + 1] = startY; // Lock Y (atas/bawah) — hentikan drift
+                                    values[i + 2] = startZ; // Lock Z (maju/mundur)
                                 }
                             }
                         }

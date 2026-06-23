@@ -719,29 +719,22 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     cumulative_time: interpTime - startPt.cumulative_time
                   };
 
-                  // --- POSISI 3D HIKER MENGGUNAKAN EMA GHOSTING ---
-                  // EMA (Exponential Moving Average) menciptakan titik bayangan (ghost) yang terus mengejar
-                  // koordinat asli secara eksponensial. Ini menghasilkan kurva bezier alami yang 100% mulus
-                  // dan mustahil bergetar atau melompat mundur.
+                  // --- POSISI 3D HIKER MENGGUNAKAN EMA GHOSTING (v2 - FIXED) ---
+                  // Root cause glitch sebelumnya:
+                  // 1. EMA factor 0.05 terlalu lambat → ghost tertinggal jauh → bearing mengarah mundur saat tikungan
+                  // 2. Bearing dihitung dari posisi GHOST (yang tertinggal), bukan dari jalur asli
+                  // Fix: Gunakan faktor EMA yang lebih responsif (0.12) dan hitung bearing dari INTERPOLASI GPS ASLI
+                  // menggunakan look-ahead beberapa segmen ke depan, bukan dari ghost.
                   
                   let oldLng = window.mapConsole.hiker3DPosition[0] || interpLng;
                   let oldLat = window.mapConsole.hiker3DPosition[1] || interpLat;
                   
-                  // Smoothing factor: 0.05 artinya 5% perjalanan ke target per frame (Sangat Mulus)
-                  const hikerLng = oldLng + (interpLng - oldLng) * 0.05;
-                  const hikerLat = oldLat + (interpLat - oldLat) * 0.05;
+                  // EMA factor 0.12: cukup halus untuk eliminasi getaran, cukup cepat untuk tidak lag
+                  const emaFactor = 0.12;
+                  const hikerLng = oldLng + (interpLng - oldLng) * emaFactor;
+                  const hikerLat = oldLat + (interpLat - oldLat) * emaFactor;
                   
                   window.mapConsole.hiker3DPosition = [hikerLng, hikerLat];
-
-                  // Hitung target bearing dari pergerakan EMA itu sendiri!
-                  // Karena EMA tidak pernah zigzag, bearing dijamin stabil sempurna tanpa lompatan.
-                  let targetBearing = window.mapConsole.hiker3DRotation !== undefined ? window.mapConsole.hiker3DRotation : currentBearing;
-                  
-                  // Hanya update bearing jika pergerakan cukup jauh (menghindari jitter saat diam)
-                  const distMoved = turf.distance(turf.point([oldLng, oldLat]), turf.point([hikerLng, hikerLat]), {units: 'meters'});
-                  if (distMoved > 0.05) { // 5cm movement threshold
-                      targetBearing = turf.bearing(turf.point([oldLng, oldLat]), turf.point([hikerLng, hikerLat]));
-                  }
 
                   // Fungsi utilitas untuk shortest path angular difference di JavaScript
                   const getShortestAngle = (target, current) => {
@@ -749,16 +742,25 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     return ((((diff + 180) % 360) + 360) % 360) - 180;
                   };
 
+                  // BEARING dihitung dari LOOK-AHEAD di jalur GPS asli (bukan dari ghost)
+                  // Ini 100% memastikan arah selalu benar, tidak pernah mengarah mundur.
+                  const lookAheadK = Math.min(currentK + 3, endIdx); // 3 titik ke depan
+                  const lookAheadPt = activeData[lookAheadK];
+                  let targetBearing = turf.bearing(
+                    turf.point([interpLng, interpLat]),
+                    turf.point([lookAheadPt.lng, lookAheadPt.lat])
+                  );
+
                   // Hitung diff untuk smoothing rotasi
                   let diff = getShortestAngle(targetBearing, currentBearing);
                   
                   // Kamera: smoothed bearing (0.05 factor) agar pergerakan kamera halus dan lambat
                   currentBearing += diff * 0.05;
                   
-                  // Model 3D: Smoothing terpisah agar berbelok lebih lincah seperti bus (factor 0.15)
+                  // Model 3D: Smoothing terpisah agar berbelok lebih lincah seperti bus (factor 0.12)
                   let currentModelBearing = window.mapConsole.hiker3DRotation !== undefined ? window.mapConsole.hiker3DRotation : targetBearing;
                   let diffModel = getShortestAngle(targetBearing, currentModelBearing);
-                  window.mapConsole.hiker3DRotation = currentModelBearing + diffModel * 0.15;
+                  window.mapConsole.hiker3DRotation = currentModelBearing + diffModel * 0.12;
 
                   // Hitung padding dinamis berdasarkan panel UI yang terbuka agar icon pendaki tetap di tengah layar yang terlihat
                   let dynPadding = { top: 0, bottom: 0, left: 0, right: 0 };

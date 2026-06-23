@@ -711,8 +711,13 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   let diff = targetBearing - currentBearing;
                   diff = ((diff + 180) % 360) - 180;
                   // Smoothing rotasi kamera
+                  // Kamera: smoothed bearing (0.05 factor) agar pergerakan kamera halus
                   currentBearing += diff * 0.05;
-                  window.mapConsole.hiker3DRotation = currentBearing;
+                  // Model 3D: targetBearing langsung (arah jalur aktual ke next point),
+                  // bukan currentBearing yang identik dengan kamera.
+                  // Ini membuat model TERLIHAT berputar saat trail berbelok
+                  // karena model dan kamera tidak lagi berputar dengan kecepatan sama.
+                  window.mapConsole.hiker3DRotation = targetBearing;
 
                   // Hitung padding dinamis berdasarkan panel UI yang terbuka agar icon pendaki tetap di tengah layar yang terlihat
                   let dynPadding = { top: 0, bottom: 0, left: 0, right: 0 };

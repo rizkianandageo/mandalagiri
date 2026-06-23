@@ -725,7 +725,12 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                   const interpTime = pt1.cumulative_time + (pt2.cumulative_time - pt1.cumulative_time) * frac;
                   const interpElevation = pt1.elevation + (pt2.elevation - pt1.elevation) * frac;
 
-                  window.mapConsole.hiker3DElevation = interpElevation;
+                  // Hanya gunakan GPS elevation jika datanya valid (>10m di atas laut)
+                  // Data import (GPX/GeoJSON) sering tidak punya elevasi → pt.elevation = 0
+                  // Jika elevation = 0, offset kalibrasi hanya benar di titik awal,
+                  // lalu model amblas ke terrain saat jalur naik.
+                  // Solusi: set null → Hiker3DLayer fallback ke queryTerrainElevation (EMA)
+                  window.mapConsole.hiker3DElevation = interpElevation > 10 ? interpElevation : null;
 
                   const startPt = activeData[startIdx];
                   const offsetPt = {

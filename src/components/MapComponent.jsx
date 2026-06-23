@@ -137,19 +137,42 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
       });
     }
 
+    // --- VISUAL DISPLAY GEOJSON (SIMPLIFIED) ---
+    // Buat versi geojson yang sudah dicleaning untuk tampilan visual di peta.
+    // GPS noise menghasilkan zigzag kecil yang tampak sebagai 'duri' saat di-render.
+    // Turf.simplify dengan tolerance 0.0001 (~10m) menghapus vertex yang terlalu rapat
+    // tanpa merusak bentuk jalur secara signifikan.
+    let visualGeojson = displayGeojson;
+    try {
+      if (displayGeojson.features && displayGeojson.features[0]?.geometry?.type === 'LineString') {
+        const simplified = turf.simplify(displayGeojson.features[0], {
+          tolerance: 0.0001,    // ~10 meter, cukup untuk hilangkan duri GPS
+          highQuality: true,    // Algoritma Douglas-Peucker presisi tinggi
+          mutate: false         // Jangan ubah data asli
+        });
+        visualGeojson = { type: 'FeatureCollection', features: [simplified] };
+      }
+    } catch (e) {
+      visualGeojson = displayGeojson; // Fallback ke data asli jika simplifikasi gagal
+    }
+
     if (map.current.getSource(sourceId)) {
-      map.current.getSource(sourceId).setData(displayGeojson);
+      map.current.getSource(sourceId).setData(visualGeojson);
     } else {
       map.current.addSource(sourceId, {
         type: 'geojson',
-        data: displayGeojson,
-        tolerance: 0 // Matikan simplifikasi internal
+        data: visualGeojson
+        // Biarkan MapLibre mengelola toleransi zoom-based simplification secara otomatis
       });
 
       map.current.addLayer({
         id: layerGlowId,
         type: 'line',
         source: sourceId,
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
         paint: {
           'line-color': '#0ea5e9',
           'line-width': 10,
@@ -162,6 +185,10 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
         id: layerLineId,
         type: 'line',
         source: sourceId,
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
         paint: {
           'line-color': '#38bdf8',
           'line-width': 4

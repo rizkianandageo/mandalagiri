@@ -997,17 +997,17 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                  try {
                    const bbox = turf.bbox(window.mapConsole.baseImportedGeojson);
                    map.current.fitBounds(bbox, {
-                     padding: { top: 50, bottom: 50, left: 50, right: 50 },
+                     padding: { top: 120, bottom: 400, left: 50, right: 50 },
                      pitch: 0,
                      bearing: 0,
-                     duration: 2000 // Durasi animasi zoom out 2 detik
+                     duration: 2500 // Durasi animasi zoom out lebih smooth
                    });
                  } catch (e) {
                    console.error('Fit bounds error on finish:', e);
                  }
                }
 
-               // Munculkan banner SETELAH animasi zoom out selesai (2000ms + buffer 200ms)
+               // Munculkan banner SETELAH animasi zoom out selesai (2500ms + buffer 200ms)
                setTimeout(() => {
                  setSimulationSummary({
                     distance: stats.distance || '--',
@@ -1016,7 +1016,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     maxElevation: stats.maxElevation || '--',
                     calories: stats.calories || '--'
                  });
-               }, 2200);
+               }, 2700);
             }
             
             // Kembalikan rute penuh saat simulasi dihentikan

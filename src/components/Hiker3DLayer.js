@@ -95,10 +95,20 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             if (!this.model) return;
 
             // Ambil posisi dan bearing dari global state (di-update setiap frame oleh MapComponent)
-            // Trail (setData) dan model keduanya menggunakan [interpLng, interpLat] yang SAMA,
-            // sehingga tidak perlu buffer. Buffer justru membuat model TERTINGGAL dari trail.
-            const lngLat = window.mapConsole?.hiker3DPosition;
-            if (!lngLat) return;
+            const rawLngLat = window.mapConsole?.hiker3DPosition;
+            if (!rawLngLat) return;
+
+            // BUG FIX: MapLibre setData() untuk jalur merah bersifat ASYNCHRONOUS (diproses di Web Worker).
+            // Biasanya memakan waktu 2-3 frame sebelum jalur baru ter-render di layar.
+            // Karena itu, jika model 3D menggunakan posisi saat ini (frame N), ia akan mendahului 
+            // jalur merah yang baru ter-render sampai frame N-3!
+            // Solusi: Kita buat buffer 3-frame untuk menunda posisi model 3D agar sinkron dengan jalur.
+            if (!this.posBuffer) this.posBuffer = [];
+            this.posBuffer.push([...rawLngLat]);
+            if (this.posBuffer.length > 3) {
+                this.posBuffer.shift();
+            }
+            const lngLat = this.posBuffer[0]; // Gunakan posisi dari 3 frame yang lalu
 
             // Model bearing = targetBearing (arah jalur aktual, bukan camera bearing yang smoothed)
             const bearing = window.mapConsole?.hiker3DRotation || 0;

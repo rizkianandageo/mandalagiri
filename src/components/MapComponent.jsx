@@ -745,26 +745,42 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     return ((((diff + 180) % 360) + 360) % 360) - 180;
                   };
 
-                  // BEARING dihitung dari LOOK-AHEAD di jalur GPS asli
-                  // Ini menjamin arah hadap model selalu benar, tidak pernah mengarah mundur.
-                  const lookAheadK = Math.min(currentK + 3, endIdx); // 3 titik ke depan
+                  // BEARING dihitung dari LOOK-AHEAD BERBASIS JARAK (bukan jumlah titik)
+                  // Look-ahead 3 titik bermasalah saat vertex GPS sangat rapat (hanya 3-6 meter),
+                  // menyebabkan bearing berubah terlalu cepat dan kamera goyang hebat.
+                  // Solusi: cari titik yang SETIDAKNYA 30 meter ke depan berdasarkan jarak kumulatif.
+                  const LOOKAHEAD_KM = 0.030; // 30 meter ke depan
+                  const lookAheadTargetDist = currentSimDistance + LOOKAHEAD_KM;
+                  let lookAheadK = currentK;
+                  while (lookAheadK < endIdx && activeData[lookAheadK].distance < lookAheadTargetDist) {
+                    lookAheadK++;
+                  }
                   const lookAheadPt = activeData[lookAheadK];
-                  let targetBearing = turf.bearing(
-                    turf.point([interpLng, interpLat]),
-                    turf.point([lookAheadPt.lng, lookAheadPt.lat])
-                  );
+                  
+                  // Hitung jarak aktual ke look-ahead point (dalam meter)
+                  const lookAheadActualDist = (activeData[lookAheadK].distance - currentSimDistance) * 1000;
+                  
+                  let targetBearing = currentBearing; // Default: pertahankan bearing saat ini
+                  if (lookAheadActualDist > 5) {
+                    // Hanya update bearing jika look-ahead point cukup jauh (>5 meter)
+                    // Vertex yang sangat berdekatan (<5m) akan di-skip untuk mencegah kamera goyang
+                    targetBearing = turf.bearing(
+                      turf.point([interpLng, interpLat]),
+                      turf.point([lookAheadPt.lng, lookAheadPt.lat])
+                    );
+                  }
 
                   // Hitung diff untuk smoothing rotasi
                   let diff = getShortestAngle(targetBearing, currentBearing);
                   
-                  // Kamera: smoothing factor 0.08 agar rotasi kamera terasa cinematic dan smooth
-                  // (sebelumnya 0.05 terlalu lambat, terrain terasa 'drift' saat tikungan)
-                  currentBearing += diff * 0.08;
+                  // Kamera: smoothing factor 0.04 — sangat smooth/cinematic, tidak goyang karena vertex rapat
+                  // Faktor kecil = kamera berputar LAMBAT dan MULUS, ideal untuk navigasi gunung
+                  currentBearing += diff * 0.04;
                   
-                  // Model 3D: Smoothing lebih responsif agar berbelok natural (factor 0.12)
+                  // Model 3D: Sedikit lebih responsif dari kamera agar berbelok natural (factor 0.10)
                   let currentModelBearing = window.mapConsole.hiker3DRotation !== undefined ? window.mapConsole.hiker3DRotation : targetBearing;
                   let diffModel = getShortestAngle(targetBearing, currentModelBearing);
-                  window.mapConsole.hiker3DRotation = currentModelBearing + diffModel * 0.12;
+                  window.mapConsole.hiker3DRotation = currentModelBearing + diffModel * 0.10;
 
                   // Hitung padding dinamis berdasarkan panel UI yang terbuka agar icon pendaki tetap di tengah layar yang terlihat
                   let dynPadding = { top: 0, bottom: 0, left: 0, right: 0 };

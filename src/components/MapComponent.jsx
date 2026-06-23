@@ -807,11 +807,10 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                       }
                     }
                     
-                    // VERTICAL OFFSET KOREKSI 3D:
-                    // Karena rendering 3D selalu mendorong puncak terrain ke atas, kita beri sedikit 
-                    // padding.top buatan untuk memaksa "center point" kamera turun sedikit ke bawah.
-                    // Ini akan membuat icon pendaki turun dari bagian atas layar ke bagian tengah optikal.
-                    dynPadding.top = window.innerHeight * 0.2;
+                    // Tingkatkan top padding agar icon pendaki turun lebih ke bawah layar.
+                    // Rumus posisi icon: dynPadding.top/2 + innerHeight/2
+                    // 0.4 → icon berada di sekitar 70% dari atas (bawah tengah layar)
+                    dynPadding.top = window.innerHeight * 0.4;
                     dynPadding.bottom = 0;
                     
                   } catch (e) {

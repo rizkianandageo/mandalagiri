@@ -137,6 +137,7 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
           cumulative_time: cumTime
         };
       });
+      window.mapConsole.importedRouteStats = importedRoute.stats;
     }
 
     // --- VISUAL DISPLAY GEOJSON (SIMPLIFIED) ---
@@ -989,32 +990,14 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
             
             // Tampilkan summary banner JIKA navigasi data import dan selesai natural
             if (isNaturalFinish === true && window.mapConsole.importedSimulationData) {
-               const activeData = window.mapConsole.importedSimulationData;
-               const endData = activeData[activeData.length - 1];
-               const distKm = endData.distance.toFixed(2);
-               const timeMins = Math.round(endData.cumulative_time);
-               let hours = Math.floor(timeMins / 60);
-               let mins = timeMins % 60;
-               const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-               
-               let ascent = 0;
-               let maxElev = activeData[0].elevation || 0;
-               for (let j = 1; j < activeData.length; j++) {
-                  if (activeData[j].elevation > activeData[j-1].elevation) {
-                     ascent += (activeData[j].elevation - activeData[j-1].elevation);
-                  }
-                  if (activeData[j].elevation > maxElev) {
-                     maxElev = activeData[j].elevation;
-                  }
-               }
-               const calories = Math.round(7 * timeMins); // roughly 7 kcal per min of hiking
+               const stats = window.mapConsole.importedRouteStats || {};
                
                setSimulationSummary({
-                  distance: distKm,
-                  time: timeStr,
-                  ascent: Math.round(ascent),
-                  maxElevation: Math.round(maxElev),
-                  calories: calories
+                  distance: stats.distance || '--',
+                  time: stats.timerTimeStr || stats.elapsedTimeStr || '--',
+                  ascent: stats.elevationGain || '--',
+                  maxElevation: stats.maxElevation || '--',
+                  calories: stats.calories || '--'
                });
                
                // Zoom out ke bbox

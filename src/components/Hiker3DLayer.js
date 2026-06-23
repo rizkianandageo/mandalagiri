@@ -132,12 +132,12 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             // meterInMercatorCoordinateUnits() = faktor konversi meter → Mercator units
             const meterScale = mercator.meterInMercatorCoordinateUnits();
 
-            // Ukuran visual model berdasarkan tinggi GLTF aktual agar proporsional.
-            // targetHeightMeters = tinggi tampil model di dunia (dalam meter).
-            // Dibagi modelGltfHeight agar scale tidak bergantung pada unit GLTF model.
-            const targetHeightMeters = 15; // 15m agar terlihat jelas di zoom 13
-            const gltfHeight = this.modelGltfHeight || 1.0;
-            const scale = meterScale * (targetHeightMeters / gltfHeight);
+            // Ukuran visual model: di zoom 13.2 resolusi layar ≈ 16m/pixel.
+            // Model harus minimal 80m agar terlihat jelas (5+ pixel tinggi di layar).
+            // Scale ini bersifat fixed dalam meter world-space, tidak bergantung unit GLTF.
+            // Jika model terlihat terlalu besar/kecil, sesuaikan nilai modelSizeMeters.
+            const modelSizeMeters = 80;
+            const scale = meterScale * modelSizeMeters;
 
             // ---------------------------------------------------------------
             // POLA RESMI MapLibre + Three.js:

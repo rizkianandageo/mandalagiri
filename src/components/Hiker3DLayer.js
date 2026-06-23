@@ -58,9 +58,12 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
                 // Model ini non-standard: kaki di +Y, kepala di -Y dalam GLTF space.
                 // Feet offset = -box.max.y agar kaki bergerak ke Y=0 (origin).
                 const box = new THREE.Box3().setFromObject(this.model);
-                this.modelFootOffset = -box.max.y;
+                // Mixamo/standard Y-up: kaki di min.y, kepala di max.y
+                this.modelFootOffset = -box.min.y; // geser kaki ke Y=0
+                this.modelGltfHeight = box.max.y - box.min.y; // tinggi asli model dalam unit GLTF
                 console.log('Hiker3D: BBox Y:', box.min.y.toFixed(2), 'to', box.max.y.toFixed(2),
-                    '| footOffset:', this.modelFootOffset.toFixed(2));
+                    '| footOffset:', this.modelFootOffset.toFixed(2),
+                    '| GLTF height:', this.modelGltfHeight.toFixed(2));
 
                 // Mainkan animasi pertama jika ada
                 if (gltf.animations && gltf.animations.length > 0) {
@@ -129,9 +132,12 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             // meterInMercatorCoordinateUnits() = faktor konversi meter → Mercator units
             const meterScale = mercator.meterInMercatorCoordinateUnits();
 
-            // Ukuran visual model dalam meter — dikecilkan agar proporsional
-            const modelSizeMeters = 80;
-            const scale = meterScale * modelSizeMeters;
+            // Ukuran visual model berdasarkan tinggi GLTF aktual agar proporsional.
+            // targetHeightMeters = tinggi tampil model di dunia (dalam meter).
+            // Dibagi modelGltfHeight agar scale tidak bergantung pada unit GLTF model.
+            const targetHeightMeters = 15; // 15m agar terlihat jelas di zoom 13
+            const gltfHeight = this.modelGltfHeight || 1.0;
+            const scale = meterScale * (targetHeightMeters / gltfHeight);
 
             // ---------------------------------------------------------------
             // POLA RESMI MapLibre + Three.js:
@@ -157,38 +163,43 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
 
             const m = new THREE.Matrix4().fromArray(mvpArray);
 
-            // Model Transform Matrix (L): posisi, skala, rotasi
-            // Model GLTF ini non-standard: kaki berada di +Y, kepala di -Y.
-            // RotationX(-PI/2) memetakan GLTF +Y → MapLibre -Z (bawah/terrain) sehingga kaki ke bawah.
-            const rotationX = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
-            const rotationZ = new THREE.Matrix4().makeRotationZ((bearing) * Math.PI / 180);
+            // Model Transform Matrix (L) — transform chain untuk Mixamo standard Y-up:
+            // Aplikasi berurutan (kanan ke kiri dalam perkalian matrix):
+            // 1. feetTranslation: geser kaki ke origin di GLTF lokal space
+            // 2. rotationX(+PI/2): konversi GLTF Y-up ke MapLibre Z-up (Y→Z, Z→-Y)
+            //    Mixamo menghadap -Z → setelah RotationX(+PI/2) menghadap North (+Y MapLibre)
+            // 3. rotationZ(-bearing): putar ke arah jalur (di MapLibre world space)
+            //    Tanda NEGATIF karena MapLibre bearing searah jarum jam, Three.js berlawanan
+            // 4. counterPitch: agar model tampak tegak meski kamera tilt
 
-            // COUNTER-PITCH ROTATION: Agar model selalu tampak tegak lurus di layar
-            // meski kamera MapLibre sedang dalam mode pitch/tilt (3D terrain view).
-            // Tanda NEGATIF (-mapPitchRad) penting: kamera pitch = model harus counter-rotate
-            // berlawanan arah agar terlihat tegak dari sudut pandang layar.
+            const rotationX = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+
+            // Bearing rotation di MapLibre world space (setelah RotationX)
+            const rotationZ = new THREE.Matrix4().makeRotationZ(-bearing * Math.PI / 180);
+
+            // COUNTER-PITCH ROTATION: Agar model selalu tampak tegak lurus di layar.
+            // pitchAxis = arah "kanan kamera" = (cos(bearing), -sin(bearing), 0)
+            // Note: -sin bukan +sin! Untuk bearing=90° (East), kanan kamera = South (-Y).
             const mapBearing = this.map.getBearing() || 0;
             const mapPitch = this.map.getPitch() || 0;
             const mapBearingRad = mapBearing * Math.PI / 180;
             const mapPitchRad = mapPitch * Math.PI / 180;
-            // Sumbu pitch kamera (arah "kanan kamera" di Mercator world space)
-            const pitchAxis = new THREE.Vector3(Math.cos(mapBearingRad), Math.sin(mapBearingRad), 0);
-            // Gunakan NEGATIF mapPitchRad untuk counter-rotate berlawanan pitch kamera
+            const pitchAxis = new THREE.Vector3(Math.cos(mapBearingRad), -Math.sin(mapBearingRad), 0);
             const counterPitch = new THREE.Matrix4().makeRotationAxis(pitchAxis, -mapPitchRad);
 
-            // Local translation untuk geser origin dari tengah badan ke kaki model.
-            // Ini menghilangkan parallax displacement: dengan origin di kaki,
-            // posisi model di peta = posisi kaki = tepat di atas jalur trail.
+            // feetTranslation: geser kaki ke origin dalam GLTF lokal space
             const footOffset = this.modelFootOffset !== undefined ? this.modelFootOffset : 0;
             const feetTranslation = new THREE.Matrix4().makeTranslation(0, footOffset, 0);
 
+            // Chain: T × S × counterPitch × rotationZ × rotationX × feetTranslation
+            // Kanan ke kiri: feetTranslation → rotationX → rotationZ → counterPitch → S → T
             const l = new THREE.Matrix4()
                 .makeTranslation(mercator.x, mercator.y, mercator.z)
                 .scale(new THREE.Vector3(scale, scale, scale))
-                .multiply(rotationX)
                 .multiply(counterPitch)
                 .multiply(rotationZ)
-                .multiply(feetTranslation); // ← geser origin ke kaki (lokal, sebelum rotasi)
+                .multiply(rotationX)
+                .multiply(feetTranslation);
 
             // Set camera matrix = MVP dari MapLibre × Model transform
             this.camera.projectionMatrix = m.multiply(l);

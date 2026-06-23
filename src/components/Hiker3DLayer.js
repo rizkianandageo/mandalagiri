@@ -124,14 +124,25 @@ export function createHiker3DLayer(mapInstance, modelUrl) {
             const bearing = window.mapConsole?.hiker3DRotation || 0;
 
             // Dapatkan elevasi terrain di titik model
-            // KUNCI: Gunakan elevasi interpolasi mulus dari GPS (jika ada), bukan queryTerrainElevation yang kasar.
-            // Query terrain MapLibre (Terrain RGB) sering memiliki efek "staircase" / tangga.
-            // Pada kamera miring 45 derajat, pantulan naik-turun tangga ini terlihat persis seperti 
-            // model melompat maju-mundur secara visual (optical illusion glitch).
-            let elevation = window.mapConsole?.hiker3DElevation;
-            if (elevation === undefined && this.map.queryTerrainElevation) {
-                elevation = this.map.queryTerrainElevation(lngLat) || 0;
+            // KUNCI: Harus menggunakan queryTerrainElevation agar model tidak amblas ke dalam tanah 
+            // karena perbedaan data elevasi GPS vs DEM MapLibre.
+            // Untuk menghindari efek "staircase" (tangga) dari Terrain RGB, kita gunakan Low-Pass Filter (EMA).
+            let rawElevation = 0;
+            if (this.map.queryTerrainElevation) {
+                rawElevation = this.map.queryTerrainElevation(lngLat) || 0;
             }
+            
+            // Inisialisasi elevasi pertama kali agar tidak mulai dari 0
+            if (this.currentElevation === undefined) {
+                this.currentElevation = rawElevation;
+            }
+            
+            // EMA (Exponential Moving Average) Smoothing Factor. 
+            // 0.05 artinya 5% menuju target per frame, sangat halus.
+            const smoothFactor = 0.05; 
+            this.currentElevation += (rawElevation - this.currentElevation) * smoothFactor;
+            
+            let elevation = this.currentElevation;
 
             // Konversi ke Mercator koordinat dengan elevasi
             const mercator = maplibregl.MercatorCoordinate.fromLngLat(lngLat, elevation);

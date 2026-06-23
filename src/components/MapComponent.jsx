@@ -626,14 +626,10 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
               let currentSimDistance = activeData[startIdx].distance;
               let currentK = startIdx;
               
-              // --- JALUR INVISIBLE HALUS KHUSUS 3D HIKER ---
-              // Membuat jalur yang dicleansing (noise/vertex dikurangi) agar icon 3D berjalan 
-              // sangat mulus (cinematic) tidak terpengaruh zigzag data GPS asli.
-              const rawCoords = activeData.slice(startIdx, endIdx + 1).map(p => [p.lng, p.lat]);
-              const rawLine = turf.lineString(rawCoords);
-              // Tolerance 0.00005 derajat (~5 meter), hapus titik-titik rapat/kasar
-              const simplifiedLine = turf.simplify(rawLine, {tolerance: 0.00005, highQuality: true});
-              const smoothedLineLength = turf.length(simplifiedLine, {units: 'kilometers'});
+              // --- PENGHAPUSAN JALUR INVISIBLE TURF ---
+              // turf.along memakan CPU dan turf.simplify menyebabkan artefak potong-kompas di tikungan tajam 
+              // yang membuat kalkulasi bearing melompat ke belakang (maju-mundur).
+              // Kita ganti dengan EMA Ghosting yang jauh lebih ringan dan 100% mulus tanpa sudut tajam.
 
               // Tambahkan Hiker 3D Layer
               if (!map.current.getLayer('hiker-3d-model')) {
@@ -723,21 +719,29 @@ const MapComponent = ({ userLocation, isOutsideBounds, startPoi, endPoi, poiList
                     cumulative_time: interpTime - startPt.cumulative_time
                   };
 
-                  // --- POSISI 3D HIKER MENGGUNAKAN JALUR INVISIBLE (SMOOTHED) ---
-                  // Hitung persentase progress simulasi dari total jarak asli
-                  const progress = totalDistance > 0 ? Math.min((currentSimDistance - startPt.distance) / totalDistance, 1.0) : 1.0;
-                  // Petakan persentase ke jalur yang sudah di-smoothing
-                  const hikerDist = progress * smoothedLineLength;
+                  // --- POSISI 3D HIKER MENGGUNAKAN EMA GHOSTING ---
+                  // EMA (Exponential Moving Average) menciptakan titik bayangan (ghost) yang terus mengejar
+                  // koordinat asli secara eksponensial. Ini menghasilkan kurva bezier alami yang 100% mulus
+                  // dan mustahil bergetar atau melompat mundur.
                   
-                  // Ambil posisi persis di jalur smoothing
-                  const hikerPt = turf.along(simplifiedLine, hikerDist, {units: 'kilometers'});
-                  const [hikerLng, hikerLat] = hikerPt.geometry.coordinates;
+                  let oldLng = window.mapConsole.hiker3DPosition[0] || interpLng;
+                  let oldLat = window.mapConsole.hiker3DPosition[1] || interpLat;
+                  
+                  // Smoothing factor: 0.05 artinya 5% perjalanan ke target per frame (Sangat Mulus)
+                  const hikerLng = oldLng + (interpLng - oldLng) * 0.05;
+                  const hikerLat = oldLat + (interpLat - oldLat) * 0.05;
+                  
                   window.mapConsole.hiker3DPosition = [hikerLng, hikerLat];
 
-                  // Look-ahead sejauh ~20 meter di jalur smoothing untuk bearing yang sangat stabil
-                  const lookAheadDist = Math.min(hikerDist + 0.02, smoothedLineLength);
-                  const lookAheadPt = turf.along(simplifiedLine, lookAheadDist, {units: 'kilometers'});
-                  let targetBearing = turf.bearing(hikerPt, lookAheadPt);
+                  // Hitung target bearing dari pergerakan EMA itu sendiri!
+                  // Karena EMA tidak pernah zigzag, bearing dijamin stabil sempurna tanpa lompatan.
+                  let targetBearing = window.mapConsole.hiker3DRotation !== undefined ? window.mapConsole.hiker3DRotation : currentBearing;
+                  
+                  // Hanya update bearing jika pergerakan cukup jauh (menghindari jitter saat diam)
+                  const distMoved = turf.distance(turf.point([oldLng, oldLat]), turf.point([hikerLng, hikerLat]), {units: 'meters'});
+                  if (distMoved > 0.05) { // 5cm movement threshold
+                      targetBearing = turf.bearing(turf.point([oldLng, oldLat]), turf.point([hikerLng, hikerLat]));
+                  }
 
                   // Fungsi utilitas untuk shortest path angular difference di JavaScript
                   const getShortestAngle = (target, current) => {

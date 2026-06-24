@@ -1120,17 +1120,17 @@ function App() {
           {(isDescPinned || isActivitySummaryPinned || isLayerSwitchPinned) && (
             <div style={{ position: 'absolute', top: '100px', left: '0', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {isDescPinned && (
-                <button onClick={() => { setIsDescPinned(false); setIsDescMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 14px 10px 8px', border: '1px solid rgba(34, 211, 238, 0.3)', borderLeft: 'none', borderRadius: '0 8px 8px 0', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.4)' }} title="Unpin Mountain Info">
+                <button onClick={() => { setIsDescPinned(false); setIsDescMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 14px 10px 8px', border: '1px solid rgba(34, 211, 238, 0.3)', borderLeft: 'none', borderRadius: '0 8px 8px 0', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.1)', backdropFilter: 'none', WebkitBackdropFilter: 'none' }} title="Unpin Mountain Info">
                   <Mountain size={18} color="var(--accent)" />
                 </button>
               )}
               {isActivitySummaryPinned && (
-                <button onClick={() => { setIsActivitySummaryPinned(false); setIsActivitySummaryMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 14px 10px 8px', border: '1px solid rgba(34, 211, 238, 0.3)', borderLeft: 'none', borderRadius: '0 8px 8px 0', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.4)' }} title="Unpin Activity Summary">
+                <button onClick={() => { setIsActivitySummaryPinned(false); setIsActivitySummaryMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 14px 10px 8px', border: '1px solid rgba(34, 211, 238, 0.3)', borderLeft: 'none', borderRadius: '0 8px 8px 0', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.1)', backdropFilter: 'none', WebkitBackdropFilter: 'none' }} title="Unpin Activity Summary">
                   <Watch size={18} color="var(--accent)" />
                 </button>
               )}
               {isLayerSwitchPinned && (
-                <button onClick={() => setIsLayerSwitchPinned(false)} className="hud-panel" style={{ position: 'static', padding: '10px 14px 10px 8px', border: '1px solid rgba(34, 211, 238, 0.3)', borderLeft: 'none', borderRadius: '0 8px 8px 0', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.4)' }} title="Unpin Layer Switch">
+                <button onClick={() => setIsLayerSwitchPinned(false)} className="hud-panel" style={{ position: 'static', padding: '10px 14px 10px 8px', border: '1px solid rgba(34, 211, 238, 0.3)', borderLeft: 'none', borderRadius: '0 8px 8px 0', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.1)', backdropFilter: 'none', WebkitBackdropFilter: 'none' }} title="Unpin Layer Switch">
                   <Map size={18} color="var(--accent)" />
                 </button>
               )}
@@ -1141,17 +1141,17 @@ function App() {
           {(isLiveSituationPinned || isWeatherPinned || isPhotoPanelPinned) && (
             <div style={{ position: 'absolute', top: '100px', right: '0', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
               {isLiveSituationPinned && (
-                <button onClick={() => { setIsLiveSituationPinned(false); setIsLiveSituationMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid rgba(34, 211, 238, 0.3)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.4)' }} title="Unpin Live Situation">
+                <button onClick={() => { setIsLiveSituationPinned(false); setIsLiveSituationMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid rgba(34, 211, 238, 0.3)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.1)', backdropFilter: 'none', WebkitBackdropFilter: 'none' }} title="Unpin Live Situation">
                   <Activity size={18} color="var(--accent)" />
                 </button>
               )}
               {isWeatherPinned && (
-                <button onClick={() => { setIsWeatherPinned(false); setIsWeatherMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid rgba(34, 211, 238, 0.3)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.4)' }} title="Unpin Weather">
+                <button onClick={() => { setIsWeatherPinned(false); setIsWeatherMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid rgba(34, 211, 238, 0.3)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.1)', backdropFilter: 'none', WebkitBackdropFilter: 'none' }} title="Unpin Weather">
                   <CloudRain size={18} color="var(--accent)" />
                 </button>
               )}
               {isPhotoPanelPinned && (
-                <button onClick={() => setIsPhotoPanelPinned(false)} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid rgba(34, 211, 238, 0.3)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.4)' }} title="Unpin Photo Panel">
+                <button onClick={() => setIsPhotoPanelPinned(false)} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid rgba(34, 211, 238, 0.3)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.1)', backdropFilter: 'none', WebkitBackdropFilter: 'none' }} title="Unpin Photo Panel">
                   <ImagePlus size={18} color="var(--accent)" />
                 </button>
               )}

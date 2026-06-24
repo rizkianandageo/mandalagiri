@@ -744,6 +744,7 @@ function App() {
           </div>
           )}
         </div>
+        )}
 
         {/* Card 2: Weather Forecast */}
         {!isWeatherPinned && (
@@ -787,6 +788,7 @@ function App() {
             )
           )}
         </div>
+        )}
       </div>
 
       {/* Floating Import Data Button */}

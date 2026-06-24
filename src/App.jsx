@@ -802,7 +802,7 @@ function App() {
         </button>
       ) : (
         !isPhotoPanelPinned && (
-        <div className="import-data-floating imported-actions" style={{ position: 'relative' }}>
+        <div className="import-data-floating imported-actions">
             {isMobile && (
               <button 
                 onClick={() => setIsPhotoPanelPinned(true)}
@@ -861,7 +861,7 @@ function App() {
 
       {/* Layer Legend / Switcher */}
       {!isLayerSwitchPinned && (
-      <div className={`layer-legend-panel ${isProfileMinimized ? 'minimized' : ''}`} style={{ position: 'relative' }}>
+      <div className={`layer-legend-panel ${isProfileMinimized ? 'minimized' : ''}`}>
         {isMobile && (
           <button 
             onClick={() => setIsLayerSwitchPinned(true)}
@@ -1118,19 +1118,19 @@ function App() {
         <>
           {/* Left Pinned Icons */}
           {(isDescPinned || isActivitySummaryPinned || isLayerSwitchPinned) && (
-            <div style={{ position: 'absolute', top: '100px', left: '10px', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ position: 'absolute', top: '100px', left: '0', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {isDescPinned && (
-                <button onClick={() => { setIsDescPinned(false); setIsDescMinimized(true); }} className="hud-panel" style={{ padding: '8px', border: '1px solid var(--accent)', borderRadius: '8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Mountain Info">
+                <button onClick={() => { setIsDescPinned(false); setIsDescMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 14px 10px 8px', border: '1px solid var(--accent)', borderLeft: 'none', borderRadius: '0 8px 8px 0', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Mountain Info">
                   <Mountain size={18} color="var(--accent)" />
                 </button>
               )}
               {isActivitySummaryPinned && (
-                <button onClick={() => { setIsActivitySummaryPinned(false); setIsActivitySummaryMinimized(true); }} className="hud-panel" style={{ padding: '8px', border: '1px solid var(--accent)', borderRadius: '8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Activity Summary">
+                <button onClick={() => { setIsActivitySummaryPinned(false); setIsActivitySummaryMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 14px 10px 8px', border: '1px solid var(--accent)', borderLeft: 'none', borderRadius: '0 8px 8px 0', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Activity Summary">
                   <Watch size={18} color="var(--accent)" />
                 </button>
               )}
               {isLayerSwitchPinned && (
-                <button onClick={() => setIsLayerSwitchPinned(false)} className="hud-panel" style={{ padding: '8px', border: '1px solid var(--accent)', borderRadius: '8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Layer Switch">
+                <button onClick={() => setIsLayerSwitchPinned(false)} className="hud-panel" style={{ position: 'static', padding: '10px 14px 10px 8px', border: '1px solid var(--accent)', borderLeft: 'none', borderRadius: '0 8px 8px 0', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Layer Switch">
                   <Map size={18} color="var(--accent)" />
                 </button>
               )}
@@ -1139,14 +1139,14 @@ function App() {
 
           {/* Right Pinned Icons (Top Area) */}
           {(isLiveSituationPinned || isWeatherPinned) && (
-            <div style={{ position: 'absolute', top: '100px', right: '10px', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+            <div style={{ position: 'absolute', top: '100px', right: '0', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
               {isLiveSituationPinned && (
-                <button onClick={() => { setIsLiveSituationPinned(false); setIsLiveSituationMinimized(true); }} className="hud-panel" style={{ padding: '8px', border: '1px solid var(--accent)', borderRadius: '8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Live Situation">
+                <button onClick={() => { setIsLiveSituationPinned(false); setIsLiveSituationMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid var(--accent)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Live Situation">
                   <Activity size={18} color="var(--accent)" />
                 </button>
               )}
               {isWeatherPinned && (
-                <button onClick={() => { setIsWeatherPinned(false); setIsWeatherMinimized(true); }} className="hud-panel" style={{ padding: '8px', border: '1px solid var(--accent)', borderRadius: '8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Weather">
+                <button onClick={() => { setIsWeatherPinned(false); setIsWeatherMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid var(--accent)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Weather">
                   <CloudRain size={18} color="var(--accent)" />
                 </button>
               )}
@@ -1155,8 +1155,8 @@ function App() {
           
           {/* Right Pinned Icon (Above Compass) */}
           {isPhotoPanelPinned && (
-            <div style={{ position: 'absolute', bottom: '240px', right: '10px', zIndex: 50 }}>
-              <button onClick={() => setIsPhotoPanelPinned(false)} className="hud-panel" style={{ padding: '8px', border: '1px solid var(--accent)', borderRadius: '8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Photo Panel">
+            <div style={{ position: 'absolute', bottom: '240px', right: '0', zIndex: 50 }}>
+              <button onClick={() => setIsPhotoPanelPinned(false)} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid var(--accent)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Photo Panel">
                 <ImagePlus size={18} color="var(--accent)" />
               </button>
             </div>

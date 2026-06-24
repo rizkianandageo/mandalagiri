@@ -591,7 +591,7 @@ function App() {
               >
                 <Watch size={14} /> Activity Summary
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                 {isMobile && isActivitySummaryMinimized && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); setIsActivitySummaryPinned(true); }}
@@ -802,7 +802,7 @@ function App() {
         </button>
       ) : (
         !isPhotoPanelPinned && (
-        <div className="import-data-floating imported-actions">
+        <div className="import-data-floating imported-actions" style={{ overflow: 'visible' }}>
             {isMobile && (
               <button 
                 onClick={() => setIsPhotoPanelPinned(true)}
@@ -1138,7 +1138,7 @@ function App() {
           )}
 
           {/* Right Pinned Icons (Top Area) */}
-          {(isLiveSituationPinned || isWeatherPinned) && (
+          {(isLiveSituationPinned || isWeatherPinned || isPhotoPanelPinned) && (
             <div style={{ position: 'absolute', top: '100px', right: '0', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
               {isLiveSituationPinned && (
                 <button onClick={() => { setIsLiveSituationPinned(false); setIsLiveSituationMinimized(true); }} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid var(--accent)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Live Situation">
@@ -1150,15 +1150,11 @@ function App() {
                   <CloudRain size={18} color="var(--accent)" />
                 </button>
               )}
-            </div>
-          )}
-          
-          {/* Right Pinned Icon (Above Compass) */}
-          {isPhotoPanelPinned && (
-            <div style={{ position: 'absolute', bottom: '240px', right: '0', zIndex: 50 }}>
-              <button onClick={() => setIsPhotoPanelPinned(false)} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid var(--accent)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Photo Panel">
-                <ImagePlus size={18} color="var(--accent)" />
-              </button>
+              {isPhotoPanelPinned && (
+                <button onClick={() => setIsPhotoPanelPinned(false)} className="hud-panel" style={{ position: 'static', padding: '10px 8px 10px 14px', border: '1px solid var(--accent)', borderRight: 'none', borderRadius: '8px 0 0 8px', cursor: 'pointer', display: 'flex', background: 'rgba(15,23,42,0.9)', boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }} title="Unpin Photo Panel">
+                  <ImagePlus size={18} color="var(--accent)" />
+                </button>
+              )}
             </div>
           )}
         </>
